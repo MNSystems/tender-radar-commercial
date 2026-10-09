@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tender Radar KZ — Обратная связь</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+body{margin:0;font-family:Arial,sans-serif;background:#f4f7fb;color:#16233a}
+.wrap{max-width:1180px;margin:auto;padding:28px 18px 50px}
+.topbar{display:flex;justify-content:space-between;gap:16px;align-items:center;margin-bottom:22px}
+h1{margin:0;color:#0b4f88}.sub{color:#66758b;margin-top:6px}
+.card{background:#fff;border:1px solid #dce7f3;border-radius:16px;box-shadow:0 8px 24px rgba(20,55,90,.08);padding:22px;margin-bottom:18px}
+.login-card{max-width:520px;margin:50px auto}
+label{display:block;font-weight:700;margin:14px 0 7px}
+input,select,button{font:inherit} input{width:100%;padding:11px 12px;border:1px solid #ccd9e8;border-radius:9px}
+button{border:0;border-radius:9px;padding:10px 15px;cursor:pointer;background:#0d5f9e;color:#fff;font-weight:700}
+button.secondary{background:#e9eff6;color:#28435f}
+.actions{display:flex;gap:9px;flex-wrap:wrap}
+.hidden{display:none!important}
+.msg{margin-top:13px;padding:10px 12px;border-radius:9px;display:none}
+.msg.ok{display:block;color:#176b37;background:#edf9f1;border:1px solid #bfe6cc}
+.msg.err{display:block;color:#962e2e;background:#fff1f1;border:1px solid #f0c7c7}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px}
+.stat{background:#fff;border:1px solid #dce7f3;border-radius:13px;padding:16px}.n{font-size:26px;font-weight:800;color:#0d5f9e}.t{color:#68778b;font-size:13px}
+.table-wrap{overflow:auto} table{width:100%;border-collapse:collapse;min-width:900px}
+th,td{padding:12px 10px;border-bottom:1px solid #e5edf6;text-align:left;vertical-align:top;font-size:14px}
+th{font-size:12px;color:#4c6076;background:#f8fbfe}
+.message-cell{min-width:330px;white-space:pre-wrap;line-height:1.45}
+.badge{display:inline-block;border-radius:999px;padding:5px 9px;font-size:12px;font-weight:700;background:#eef4fa}
+.badge.error{background:#fff0f0;color:#a23333}.badge.suggestion{background:#eef8f0;color:#27653a}
+.status-select{padding:8px 9px;border:1px solid #ccd9e8;border-radius:8px;background:#fff}
+.small{color:#718096;font-size:12px}
+.empty{text-align:center;padding:28px;color:#6f7f92}
+@media(max-width:720px){.topbar{align-items:flex-start;flex-direction:column}.stats{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div id="loginView" class="card login-card">
+<h1>Tender Radar KZ</h1>
+<div class="sub">Административная страница обратной связи</div>
+<label for="email">Администратор</label>
+<input id="email" type="email" value="kvantor2020@gmail.com">
+<label for="password">Пароль</label>
+<input id="password" type="password">
+<div class="actions" style="margin-top:16px"><button id="loginBtn" onclick="login()">Войти</button></div>
+<div id="loginMsg" class="msg"></div>
+</div>
+
+<div id="adminView" class="hidden">
+<div class="topbar">
+<div><h1>Обратная связь</h1><div class="sub">Сообщения клиентов Tender Radar KZ</div></div>
+<div class="actions"><button class="secondary" onclick="loadFeedback()">Обновить</button><button class="secondary" onclick="logout()">Выйти</button></div>
+</div>
+
+<div class="stats">
+<div class="stat"><div class="n" id="countNew">0</div><div class="t">Новых</div></div>
+<div class="stat"><div class="n" id="countReviewed">0</div><div class="t">Просмотрено</div></div>
+<div class="stat"><div class="n" id="countClosed">0</div><div class="t">Закрыто</div></div>
+</div>
+
+<div class="card">
+<div id="adminMsg" class="msg"></div>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Дата</th><th>Клиент</th><th>Тип</th><th>Сообщение</th><th>Статус</th></tr></thead>
+<tbody id="feedbackBody"></tbody>
+</table>
+</div>
+<div id="emptyState" class="empty hidden">Сообщений пока нет.</div>
+</div>
+</div>
+</div>
+
+<script>
+const SUPABASE_URL="https://ilfxyvsqintvjbifqxvr.supabase.co";
+const SUPABASE_KEY="sb_publishable_GEl1zhHAxT_i8zU2F86cOA_-G6n7uBH";
+const ADMIN_EMAIL="kvantor2020@gmail.com";
+
+const adminSb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{
+ auth:{storageKey:"tr_admin_auth",persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}
+});
+const db=adminSb.schema("commercial");
+
+function esc(v){return String(v??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;")}
+function showMsg(id,text,kind){const el=document.getElementById(id);el.className="msg "+(kind==="err"?"err":"ok");el.textContent=text}
+function clearMsg(id){const el=document.getElementById(id);el.className="msg";el.textContent=""}
+
+async function login(){
+ clearMsg("loginMsg");
+ const email=document.getElementById("email").value.trim().toLowerCase();
+ const password=document.getElementById("password").value;
+ if(email!==ADMIN_EMAIL){showMsg("loginMsg","Для этой страницы разрешён только административный аккаунт.","err");return}
+ if(!password){showMsg("loginMsg","Введите пароль.","err");return}
+ const btn=document.getElementById("loginBtn");btn.disabled=true;
+ const {data,error}=await adminSb.auth.signInWithPassword({email,password});
+ btn.disabled=false;
+ if(error){showMsg("loginMsg","Не удалось войти: "+error.message,"err");return}
+ if(!data.user||String(data.user.email||"").toLowerCase()!==ADMIN_EMAIL){
+   await adminSb.auth.signOut();showMsg("loginMsg","Нет административного доступа.","err");return
+ }
+ await openAdmin()
+}
+
+async function logout(){
+ await adminSb.auth.signOut();
+ document.getElementById("adminView").classList.add("hidden");
+ document.getElementById("loginView").classList.remove("hidden");
+ document.getElementById("password").value=""
+}
+
+async function openAdmin(){
+ document.getElementById("loginView").classList.add("hidden");
+ document.getElementById("adminView").classList.remove("hidden");
+ await loadFeedback()
+}
+
+function fmtDate(v){try{return new Date(v).toLocaleString("ru-RU")}catch(_){return v||""}}
+function typeLabel(k){return k==="suggestion"?"Предложение":"Ошибка"}
+
+async function loadFeedback(){
+ clearMsg("adminMsg");
+ const {data,error}=await db.from("feedback_messages")
+   .select("id,client_id,kind,message,status,created_at")
+   .order("created_at",{ascending:false}).limit(500);
+ if(error){showMsg("adminMsg","Не удалось загрузить сообщения: "+error.message,"err");return}
+ const rows=data||[];
+ document.getElementById("countNew").textContent=rows.filter(x=>x.status==="new").length;
+ document.getElementById("countReviewed").textContent=rows.filter(x=>x.status==="reviewed").length;
+ document.getElementById("countClosed").textContent=rows.filter(x=>x.status==="closed").length;
+ const body=document.getElementById("feedbackBody");
+ const empty=document.getElementById("emptyState");
+ if(!rows.length){body.innerHTML="";empty.classList.remove("hidden");return}
+ empty.classList.add("hidden");
+ body.innerHTML=rows.map(r=>`
+ <tr>
+ <td>${esc(fmtDate(r.created_at))}<div class="small">ID ${esc(r.id)}</div></td>
+ <td><strong>Клиент ${esc(r.client_id)}</strong></td>
+ <td><span class="badge ${esc(r.kind)}">${esc(typeLabel(r.kind))}</span></td>
+ <td class="message-cell">${esc(r.message)}</td>
+ <td><select class="status-select" onchange="changeStatus(${Number(r.id)},this.value,this)">
+ <option value="new" ${r.status==="new"?"selected":""}>Новое</option>
+ <option value="reviewed" ${r.status==="reviewed"?"selected":""}>Просмотрено</option>
+ <option value="closed" ${r.status==="closed"?"selected":""}>Закрыто</option>
+ </select></td>
+ </tr>`).join("")
+}
+
+async function changeStatus(id,status,el){
+ el.disabled=true;
+ const {error}=await db.from("feedback_messages").update({status}).eq("id",id);
+ el.disabled=false;
+ if(error){showMsg("adminMsg","Не удалось изменить статус: "+error.message,"err");await loadFeedback();return}
+ await loadFeedback()
+}
+
+(async function(){
+ const {data}=await adminSb.auth.getSession();
+ const user=data?.session?.user;
+ if(user&&String(user.email||"").toLowerCase()===ADMIN_EMAIL){await openAdmin()}
+ else if(user){await adminSb.auth.signOut()}
+})();
+</script>
+</body>
+</html>

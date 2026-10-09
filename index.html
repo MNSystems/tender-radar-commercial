@@ -1,0 +1,6357 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <!-- Protocol 20: automatic Telegram binding via official Telegram Login Widget; existing commercial-telegram-connect Edge Function reused -->
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Tender Radar KZ Commercial</title>
+  <!-- GUMROAD LICENSE V4: persistent account binding; key required only for first activation -->
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f4f6f8;
+      color: #1f2937;
+    }
+
+    header {
+      background: linear-gradient(135deg, #0f2747 0%, #154f82 55%, #1d6fa8 100%);
+      color: white;
+      padding: 20px 30px;
+      box-shadow: 0 3px 14px rgba(15, 59, 102, 0.18);
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 26px;
+    }
+
+    header p {
+      margin: 6px 0 0;
+      color: #cbd5e1;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 30px auto;
+      padding: 0 20px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 14px;
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: 0 3px 12px rgba(0,0,0,.08);
+    }
+
+    .login-card {
+      max-width: 440px;
+      margin: 50px auto;
+    }
+
+    input,
+    textarea {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 12px;
+      margin: 7px 0 15px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      font-size: 15px;
+      font-family: Arial, sans-serif;
+    }
+
+    textarea {
+      min-height: 90px;
+      resize: vertical;
+    }
+
+    button {
+      border: 0;
+      border-radius: 8px;
+      padding: 11px 18px;
+      font-size: 15px;
+      cursor: pointer;
+    }
+
+    .primary {
+      background: #0f172a;
+      color: white;
+    }
+
+    .login-button {
+      width: 100%;
+      margin-top: 10px;
+    }
+
+    .secondary {
+      background: #e2e8f0;
+      color: #1f2937;
+    }
+
+    .success-button {
+      background: #15803d;
+      color: white;
+    }
+
+    .top-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 15px;
+    }
+
+    .button-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 18px;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4,1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .stat {
+      background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+      border: 1px solid #dbeafe;
+      border-radius: 14px;
+      padding: 20px;
+      box-shadow: 0 4px 14px rgba(15, 59, 102, 0.07);
+    }
+
+    .stat .value {
+      color: #0f4d80;
+    }
+
+    .cabinet-summary {
+      border: 1px solid #dbeafe;
+      background: linear-gradient(135deg, #ffffff 0%, #f7fbff 100%);
+      box-shadow: 0 7px 20px rgba(15, 59, 102, 0.08);
+    }
+
+    .cabinet-summary h2 {
+      color: #0f3b66;
+    }
+
+    .plan-item {
+      background: #f8fbff;
+      border: 1px solid #dbeafe;
+    }
+
+    .value {
+      font-size: 30px;
+      font-weight: bold;
+      margin-top: 8px;
+    }
+
+    .plan-grid {
+      display: grid;
+      grid-template-columns: repeat(6,1fr);
+      gap: 14px;
+      margin-top: 15px;
+    }
+
+    .plan-item {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 16px;
+    }
+
+    .plan-label {
+      color: #64748b;
+      font-size: 13px;
+      margin-bottom: 7px;
+    }
+
+    .plan-value {
+      font-size: 18px;
+      font-weight: bold;
+    }
+
+    .tag {
+      display: inline-block;
+      background: #e2e8f0;
+      padding: 7px 12px;
+      margin: 4px;
+      border-radius: 20px;
+    }
+
+    .status {
+      color: #15803d;
+      font-weight: bold;
+    }
+
+    .status-bad {
+      color: #b91c1c;
+      font-weight: bold;
+    }
+
+    .error {
+      color: #b91c1c;
+      background: #fee2e2;
+      padding: 15px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+    }
+
+    .info {
+      color: #1d4ed8;
+      background: #dbeafe;
+      padding: 15px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+    }
+
+    .success-message {
+      color: #166534;
+      background: #dcfce7;
+      padding: 15px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+    }
+
+    .tender {
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+      padding: 18px;
+      margin-top: 14px;
+      background: #ffffff;
+    }
+
+    .tender-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    .tender-title {
+      font-size: 17px;
+      font-weight: bold;
+      line-height: 1.4;
+      flex: 1 1 560px;
+    }
+
+    .tender-source {
+      display: inline-block;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: #eff6ff;
+      color: #1d4ed8;
+      font-size: 12px;
+      font-weight: bold;
+      white-space: nowrap;
+    }
+
+    .tender-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px 18px;
+      margin-top: 14px;
+    }
+
+    .tender-field {
+      font-size: 14px;
+      color: #334155;
+      line-height: 1.45;
+    }
+
+    .tender-field strong {
+      color: #0f172a;
+    }
+
+    .tender-match {
+      margin-top: 12px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      background: #f0fdf4;
+      color: #166534;
+      font-size: 14px;
+    }
+
+    .tender-actions {
+      margin-top: 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .tender-link {
+      display: inline-block;
+      padding: 10px 14px;
+      border-radius: 9px;
+      background: #0f172a;
+      color: white;
+      text-decoration: none;
+      font-weight: bold;
+      font-size: 14px;
+    }
+
+    .tender-link:hover {
+      background: #1e293b;
+    }
+
+    .tender-list-note {
+      color: #64748b;
+      font-size: 14px;
+      margin-top: -6px;
+      margin-bottom: 8px;
+    }
+
+
+    /* ===== Protocol 14B: Tender Radar UI ===== */
+
+    .radar-panel {
+      padding: 0;
+      overflow: hidden;
+      border: 1px solid #bfdbfe;
+      box-shadow: 0 12px 32px rgba(15, 64, 120, 0.08);
+    }
+
+    .radar-header {
+      background: linear-gradient(135deg, #0f3b66 0%, #155e9a 55%, #1d74b8 100%);
+      color: white;
+      padding: 22px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 18px;
+      flex-wrap: wrap;
+    }
+
+    .radar-title-wrap h2 {
+      margin: 0 0 5px;
+      color: white;
+      font-size: 24px;
+      letter-spacing: 0.2px;
+    }
+
+    .radar-subtitle {
+      margin: 0;
+      color: #dbeafe;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .radar-live {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.13);
+      border: 1px solid rgba(255,255,255,0.24);
+      font-size: 12px;
+      font-weight: bold;
+      white-space: nowrap;
+    }
+
+    .radar-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: #4ade80;
+      box-shadow: 0 0 0 4px rgba(74,222,128,0.15);
+    }
+
+    .radar-body {
+      padding: 20px 22px 24px;
+      background: linear-gradient(180deg, #f8fbff 0%, #ffffff 100%);
+    }
+
+    .radar-kpis {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0,1fr));
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .radar-kpi[role="button"] { cursor: pointer; transition: border-color .15s, box-shadow .15s; }
+    .radar-kpi[role="button"]:hover, .radar-kpi[role="button"]:focus-visible { border-color: #60a5fa; box-shadow: 0 0 0 2px #bfdbfe; outline: none; }
+    .radar-kpi[role="button"].selected { border-color: #155e9a; background: #eff6ff; }
+    .radar-kpi {
+      background: white;
+      border: 1px solid #dbeafe;
+      border-radius: 12px;
+      padding: 14px 15px;
+      min-height: 72px;
+    }
+
+    .radar-kpi-label {
+      color: #64748b;
+      font-size: 12px;
+      margin-bottom: 5px;
+    }
+
+    .radar-kpi-value {
+      color: #0f3b66;
+      font-size: 23px;
+      font-weight: 800;
+      line-height: 1.1;
+    }
+
+    .radar-toolbar {
+      display: grid;
+      grid-template-columns: minmax(240px, 1.5fr) minmax(150px, .7fr) minmax(140px, .7fr) minmax(160px, .8fr);
+      gap: 10px;
+      margin: 14px 0 10px;
+    }
+
+    .radar-toolbar input,
+    .radar-toolbar select {
+      width: 100%;
+      box-sizing: border-box;
+      margin: 0;
+      min-height: 42px;
+      border: 1px solid #cbd5e1;
+      border-radius: 10px;
+      background: white;
+      color: #0f172a;
+      padding: 9px 11px;
+      font-size: 14px;
+    }
+
+    .radar-period-help {
+      color: #475569;
+      font-size: 13px;
+      line-height: 1.5;
+      margin: 12px 0 6px;
+    }
+
+    .radar-periods {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin: 10px 0 6px;
+    }
+
+    .radar-filter-btn {
+      border: 1px solid #bfdbfe;
+      background: #eff6ff;
+      color: #1d4ed8;
+      border-radius: 999px;
+      padding: 8px 12px;
+      font-size: 13px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .radar-filter-btn:hover {
+      background: #dbeafe;
+    }
+
+    .radar-filter-btn.active {
+      background: #155e9a;
+      border-color: #155e9a;
+      color: white;
+    }
+
+    .radar-results-note {
+      color: #64748b;
+      font-size: 13px;
+      margin: 8px 0 12px;
+    }
+
+
+    /* ===== Protocol 14D: work queue filters ===== */
+
+    .radar-workqueue {
+      margin-top: 14px;
+      padding: 12px;
+      border: 1px solid #dbeafe;
+      border-radius: 12px;
+      background: #f8fbff;
+    }
+
+    .radar-workqueue-title {
+      margin-bottom: 9px;
+      color: #0f4d80;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: .02em;
+      text-transform: uppercase;
+    }
+
+    .radar-workqueue-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .radar-work-btn {
+      border: 1px solid #bfdbfe;
+      border-radius: 999px;
+      background: #ffffff;
+      color: #155e9a;
+      padding: 7px 11px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: .15s ease;
+    }
+
+    .radar-work-btn:hover {
+      background: #eff6ff;
+    }
+
+    .radar-work-btn.active {
+      border-color: #155e9a;
+      background: #155e9a;
+      color: #ffffff;
+    }
+
+    .radar-work-count {
+      display: inline-block;
+      min-width: 16px;
+      margin-left: 4px;
+      opacity: .85;
+    }
+
+
+
+    /* ===== Protocol 20.2: client feedback ===== */
+    .feedback-card {
+      border: 1px solid #dbeafe;
+      background: linear-gradient(135deg, #ffffff 0%, #f8fbff 100%);
+    }
+
+    .feedback-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .feedback-head h3 {
+      margin: 0 0 6px;
+      color: #0f3b66;
+    }
+
+    .feedback-head p {
+      margin: 0;
+      color: #64748b;
+    }
+
+    .feedback-form {
+      display: none;
+      margin-top: 18px;
+      padding-top: 18px;
+      border-top: 1px solid #e2e8f0;
+    }
+
+    .feedback-form select {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 12px;
+      margin: 7px 0 15px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      background: white;
+      color: #1f2937;
+      font-size: 15px;
+      font-family: Arial, sans-serif;
+    }
+
+    .feedback-local-message {
+      margin-top: 12px;
+      font-size: 14px;
+    }
+
+    .feedback-local-message.ok {
+      color: #15803d;
+    }
+
+    .feedback-local-message.err {
+      color: #b91c1c;
+    }
+
+    @media(max-width:560px) {
+      .feedback-head {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .feedback-head button {
+        width: 100%;
+      }
+    }
+
+    @media(max-width:560px) {
+      .radar-work-btn {
+        flex: 1 1 calc(50% - 8px);
+        text-align: center;
+      }
+    }
+
+    #tenders {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0,1fr));
+      gap: 14px;
+      align-items: stretch;
+    }
+
+    .radar-panel .tender {
+      margin-top: 0;
+      height: 100%;
+      box-sizing: border-box;
+      border: 1px solid #dbeafe;
+      box-shadow: 0 4px 14px rgba(15, 59, 102, 0.06);
+      position: relative;
+    }
+
+    .radar-panel .tender:hover {
+      border-color: #93c5fd;
+      box-shadow: 0 8px 22px rgba(15, 59, 102, 0.10);
+    }
+
+    .radar-panel .tender-title {
+      font-size: 15px;
+      color: #0f2740;
+    }
+
+    .radar-panel .tender-source {
+      background: #eaf3ff;
+      color: #155e9a;
+    }
+
+    .tender-urgency {
+      display: inline-block;
+      padding: 5px 9px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: bold;
+      white-space: nowrap;
+    }
+
+    .urgency-hot {
+      background: #fff7ed;
+      color: #c2410c;
+      border: 1px solid #fed7aa;
+    }
+
+    .urgency-soon {
+      background: #fefce8;
+      color: #a16207;
+      border: 1px solid #fde68a;
+    }
+
+    .urgency-normal {
+      background: #ecfdf5;
+      color: #047857;
+      border: 1px solid #a7f3d0;
+    }
+
+    .radar-panel .tender-grid {
+      grid-template-columns: 1fr;
+      gap: 7px;
+      margin-top: 12px;
+    }
+
+    .radar-panel .tender-field {
+      font-size: 13px;
+    }
+
+    .radar-panel .tender-match {
+      padding: 8px 10px;
+      font-size: 13px;
+    }
+
+    .radar-panel .tender-actions {
+      margin-top: 11px;
+      justify-content: space-between;
+    }
+
+    .radar-panel .tender-link {
+      background: #155e9a;
+      padding: 9px 12px;
+      font-size: 13px;
+    }
+
+    .radar-panel .tender-link:hover {
+      background: #0f4d80;
+    }
+
+
+    /* ===== Protocol 14C: work status + favorite ===== */
+
+    .tender-workbar {
+      margin-top: 11px;
+      padding-top: 10px;
+      border-top: 1px solid #e2e8f0;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .tender-status-select {
+      width: 100%;
+      min-height: 36px;
+      border: 1px solid #cbd5e1;
+      border-radius: 9px;
+      background: #ffffff;
+      color: #0f172a;
+      padding: 7px 9px;
+      font-size: 12px;
+      font-weight: 600;
+      box-sizing: border-box;
+    }
+
+    .tender-status-select:disabled {
+      opacity: .65;
+      cursor: wait;
+    }
+
+    .favorite-btn {
+      min-height: 36px;
+      border: 1px solid #bfdbfe;
+      border-radius: 9px;
+      background: #eff6ff;
+      color: #155e9a;
+      padding: 7px 10px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .favorite-btn:hover {
+      background: #dbeafe;
+    }
+
+    .favorite-btn.active {
+      background: #fff7ed;
+      border-color: #fdba74;
+      color: #c2410c;
+    }
+
+    .favorite-btn:disabled {
+      opacity: .65;
+      cursor: wait;
+    }
+
+    .work-status-note {
+      grid-column: 1 / -1;
+      min-height: 16px;
+      color: #64748b;
+      font-size: 11px;
+    }
+
+    .work-status-note.ok {
+      color: #15803d;
+    }
+
+    .work-status-note.error {
+      color: #b91c1c;
+    }
+
+    @media(max-width:560px) {
+      .tender-workbar {
+        grid-template-columns: 1fr;
+      }
+
+      .favorite-btn {
+        width: 100%;
+      }
+    }
+
+    .radar-empty {
+      grid-column: 1 / -1;
+      padding: 30px;
+      text-align: center;
+      color: #64748b;
+      background: #f8fafc;
+      border: 1px dashed #cbd5e1;
+      border-radius: 12px;
+    }
+
+
+    .radar-more-wrap {
+      text-align: center;
+      margin-top: 18px;
+    }
+
+    .radar-more-btn {
+      background: #eaf3ff;
+      color: #155e9a;
+      border: 1px solid #93c5fd;
+      border-radius: 10px;
+      padding: 10px 22px;
+      font-weight: bold;
+    }
+
+    .radar-more-btn:hover {
+      background: #dbeafe;
+    }
+
+    @media(max-width:1050px) {
+      .radar-kpis {
+        grid-template-columns: repeat(2, minmax(0,1fr));
+      }
+
+      .radar-toolbar {
+        grid-template-columns: repeat(2, minmax(0,1fr));
+      }
+    }
+
+    @media(max-width:800px) {
+      #tenders {
+        grid-template-columns: 1fr;
+      }
+
+      .radar-toolbar {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .edit-box {
+      display: none;
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid #e5e7eb;
+    }
+
+    .edit-box label {
+      display: block;
+      font-weight: bold;
+      margin-top: 5px;
+    }
+
+    .empty-profile {
+      display: none;
+      margin-top: 18px;
+      padding: 18px;
+      border: 1px dashed #cbd5e1;
+      border-radius: 12px;
+      background: #f8fafc;
+    }
+
+    .empty-profile p {
+      margin: 0 0 14px;
+      color: #475569;
+    }
+
+    .hint {
+      font-size: 13px;
+      color: #64748b;
+      margin-top: -8px;
+      margin-bottom: 8px;
+    }
+
+    footer {
+      text-align: center;
+      color: #64748b;
+      padding: 30px;
+    }
+
+    #cabinet {
+      display: none;
+    }
+
+    .forgot-wrap {
+      text-align: right;
+      margin-top: -7px;
+      margin-bottom: 12px;
+    }
+
+    .link-button {
+      background: none;
+      color: #2563eb;
+      padding: 0;
+      font-size: 14px;
+      text-decoration: underline;
+      cursor: pointer;
+    }
+
+    .register-wrap {
+      text-align: center;
+      margin-top: 14px;
+      font-size: 14px;
+      color: #64748b;
+    }
+
+    .register-card {
+      max-width: 440px;
+      margin: 50px auto;
+      display: none;
+    }
+
+    .recovery-card {
+      max-width: 440px;
+      margin: 50px auto;
+      display: none;
+    }
+
+    .recovery-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .recovery-actions button {
+      flex: 1;
+    }
+
+
+
+    .telegram-card {
+      background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+    }
+
+    .telegram-summary {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .telegram-state {
+      font-weight: bold;
+      color: #475569;
+    }
+
+    .telegram-state.on {
+      color: #15803d;
+    }
+
+    .telegram-form {
+      display: none;
+      margin-top: 18px;
+      padding-top: 18px;
+      border-top: 1px solid #e5e7eb;
+    }
+
+    .telegram-form label {
+      display: block;
+      font-weight: bold;
+      margin-top: 5px;
+    }
+
+    .onboarding-card {
+      background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+    }
+
+    .onboarding-intro {
+      color: #475569;
+      margin-top: -6px;
+      margin-bottom: 18px;
+    }
+
+    .onboarding-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+    }
+
+    .onboarding-step {
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 16px;
+      background: white;
+      min-height: 128px;
+    }
+
+    .onboarding-step.done {
+      border-color: #86efac;
+      background: #f0fdf4;
+    }
+
+    .onboarding-step.current {
+      border-color: #93c5fd;
+      background: #eff6ff;
+    }
+
+    .onboarding-step.waiting {
+      border-color: #e2e8f0;
+      background: #f8fafc;
+    }
+
+    .onboarding-number {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      background: #e2e8f0;
+      color: #334155;
+      margin-bottom: 10px;
+    }
+
+    .onboarding-step.done .onboarding-number {
+      background: #16a34a;
+      color: white;
+    }
+
+    .onboarding-step.current .onboarding-number {
+      background: #2563eb;
+      color: white;
+    }
+
+    .onboarding-title {
+      font-weight: bold;
+      margin-bottom: 6px;
+    }
+
+    .onboarding-text {
+      font-size: 14px;
+      color: #64748b;
+      line-height: 1.4;
+    }
+
+    .onboarding-status {
+      margin-top: 10px;
+      font-size: 13px;
+      font-weight: bold;
+    }
+
+    .onboarding-status.done {
+      color: #15803d;
+    }
+
+    .onboarding-status.current {
+      color: #1d4ed8;
+    }
+
+    .onboarding-status.waiting {
+      color: #64748b;
+    }
+
+
+    .source-box {
+      margin-top: 14px;
+      padding: 14px;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      background: #f8fafc;
+    }
+
+    .source-options {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+
+    .source-option {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 12px;
+      border: 1px solid #cbd5e1;
+      border-radius: 10px;
+      background: white;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .source-option input {
+      width: auto;
+      margin: 0;
+    }
+
+    .source-counter {
+      margin-top: 10px;
+      font-size: 13px;
+      color: #475569;
+      font-weight: bold;
+    }
+
+    @media(max-width:900px) {
+      .plan-grid {
+        grid-template-columns: repeat(2,1fr);
+      }
+    }
+
+    @media(max-width:800px) {
+      .stats {
+        grid-template-columns: repeat(2,1fr);
+      }
+
+      .top-row {
+        flex-direction: column;
+      }
+
+      .onboarding-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .tender-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Pagination: fixed 10 tenders per page, no growing list */
+    .radar-pagination { display:flex; justify-content:center; align-items:center; flex-wrap:wrap; gap:7px; margin-top:20px; }
+    .radar-page-btn { background:#fff; border:1px solid #bfdbfe; color:#155e9a; border-radius:9px; padding:9px 12px; font-size:13px; font-weight:700; min-width:36px; }
+    .radar-page-btn:hover:not(:disabled) { background:#eff6ff; border-color:#60a5fa; }
+    .radar-page-btn.active { background:#155e9a; color:#fff; border-color:#155e9a; }
+    .radar-page-btn:disabled { opacity:.42; cursor:default; }
+    .radar-page-dots { color:#64748b; padding:0 3px; }
+    .radar-page-counter { color:#64748b; font-size:12px; flex-basis:100%; text-align:center; margin-top:4px; }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <h1>Tender Radar KZ Commercial</h1>
+  <p>Персональный кабинет клиента</p>
+</header>
+
+<div class="container">
+
+  <div id="message"></div>
+
+  <!-- ===== Gumroad license gate V2 ===== -->
+  <div id="licenseBlock" class="card login-card">
+
+    <h2>Доступ по лицензии Gumroad</h2>
+
+    <p>
+      Введите лицензионный ключ, полученный после оплаты.
+    </p>
+
+    <input
+      id="gumroadLicenseKey"
+      type="text"
+      placeholder="XXXX-XXXX-XXXX-XXXX"
+      autocomplete="off"
+      spellcheck="false"
+    >
+
+    <button
+      id="gumroadLicenseButton"
+      class="primary login-button"
+      onclick="verifyGumroadLicense()"
+    >
+      Проверить ключ
+    </button>
+
+    <p class="hint" style="margin-top:14px;margin-bottom:0">
+      Ключ нужен только для первой активации. После привязки вход выполняется по email и паролю.
+    </p>
+
+  </div>
+
+
+  <div id="loginBlock" class="card login-card" style="display:none">
+
+    <h2>Вход в кабинет</h2>
+
+    <p>Введите email и пароль клиента.</p>
+
+    <input
+      id="email"
+      type="email"
+      placeholder="Email"
+      autocomplete="username"
+    >
+
+    <input
+      id="password"
+      type="password"
+      placeholder="Пароль"
+      autocomplete="current-password"
+    >
+
+    <div class="forgot-wrap">
+      <button
+        type="button"
+        class="link-button"
+        onclick="showPasswordRecovery()"
+      >
+        Забыли пароль?
+      </button>
+    </div>
+
+    <button
+      class="primary login-button"
+      onclick="login()"
+    >
+      Войти
+    </button>
+
+    <div class="register-wrap">
+      Первый вход после покупки?
+      <button
+        type="button"
+        class="link-button"
+        onclick="showLicenseActivation()"
+      >
+        Активировать лицензию
+      </button>
+    </div>
+
+  </div>
+
+
+
+  <!-- ===== First registration after Gumroad license verification V3 ===== -->
+  <div id="firstRegistrationBlock" class="card register-card" style="display:none">
+
+    <h2>Первый вход</h2>
+
+    <p>
+      Лицензия подтверждена. Создайте пароль для входа в Tender Radar KZ Commercial.
+    </p>
+
+    <input
+      id="firstRegisterEmail"
+      type="email"
+      placeholder="Email"
+      autocomplete="email"
+      readonly
+    >
+
+    <input
+      id="firstRegisterCompany"
+      type="text"
+      placeholder="Название компании"
+      autocomplete="organization"
+    >
+
+    <input
+      id="firstRegisterPassword"
+      type="password"
+      placeholder="Придумайте пароль"
+      autocomplete="new-password"
+    >
+
+    <input
+      id="firstRegisterPasswordRepeat"
+      type="password"
+      placeholder="Повторите пароль"
+      autocomplete="new-password"
+    >
+
+    <button
+      class="primary login-button"
+      onclick="createFirstAccount()"
+    >
+      Создать аккаунт
+    </button>
+
+    <div class="register-wrap">
+      Уже создавали пароль?
+      <button
+        type="button"
+        class="link-button"
+        onclick="showExistingLoginAfterLicense()"
+      >
+        Войти
+      </button>
+    </div>
+
+  </div>
+
+
+  <div id="registrationBlock" class="card register-card">
+
+    <h2>Регистрация</h2>
+
+    <p>Создайте аккаунт Tender Radar KZ Commercial.</p>
+
+    <input
+      id="registerCompany"
+      type="text"
+      placeholder="Название компании"
+      autocomplete="organization"
+    >
+
+    <input
+      id="registerEmail"
+      type="email"
+      placeholder="Email"
+      autocomplete="email"
+    >
+
+    <input
+      id="registerPassword"
+      type="password"
+      placeholder="Пароль"
+      autocomplete="new-password"
+    >
+
+    <input
+      id="registerPasswordRepeat"
+      type="password"
+      placeholder="Повторите пароль"
+      autocomplete="new-password"
+    >
+
+    <div class="recovery-actions">
+      <button
+        class="secondary"
+        onclick="cancelRegistration()"
+      >
+        Назад
+      </button>
+
+      <button
+        class="primary"
+        onclick="registerUser()"
+      >
+        Зарегистрироваться
+      </button>
+    </div>
+
+  </div>
+
+
+  <div id="recoveryRequestBlock" class="card recovery-card">
+
+    <h2>Восстановление пароля</h2>
+
+    <p>Введите email, который используется для входа в Tender Radar KZ Commercial.</p>
+
+    <input
+      id="recoveryEmail"
+      type="email"
+      placeholder="Email"
+      autocomplete="email"
+    >
+
+    <div class="recovery-actions">
+      <button
+        class="secondary"
+        onclick="cancelPasswordRecovery()"
+      >
+        Назад
+      </button>
+
+      <button
+        class="primary"
+        onclick="sendPasswordRecovery()"
+      >
+        Отправить ссылку
+      </button>
+    </div>
+
+  </div>
+
+
+  <div id="newPasswordBlock" class="card recovery-card">
+
+    <h2>Новый пароль</h2>
+
+    <p>Введите новый пароль дважды.</p>
+
+    <input
+      id="newPassword"
+      type="password"
+      placeholder="Новый пароль"
+      autocomplete="new-password"
+    >
+
+    <input
+      id="newPasswordRepeat"
+      type="password"
+      placeholder="Повторите пароль"
+      autocomplete="new-password"
+    >
+
+    <button
+      class="primary login-button"
+      onclick="saveNewPassword()"
+    >
+      Сохранить новый пароль
+    </button>
+
+  </div>
+
+
+  <div id="cabinet">
+
+    <div class="card cabinet-summary">
+
+      <div class="top-row">
+
+        <div>
+
+          <h2 id="clientName">
+            Загрузка...
+          </h2>
+
+          <p>
+            <strong>Тариф:</strong>
+            <span id="tariff">—</span>
+          </p>
+
+          <p>
+            <strong>Статус:</strong>
+            <span id="clientStatus">—</span>
+          </p>
+
+          <p>
+            <strong>Telegram:</strong>
+            <span id="telegram">—</span>
+          </p>
+
+          <p>
+            <strong>Пользователь:</strong>
+            <span id="userEmail">—</span>
+          </p>
+
+        </div>
+
+        <button
+          class="secondary"
+          onclick="logout()"
+        >
+          Выйти
+        </button>
+
+      </div>
+
+    </div>
+
+
+    <div class="stats">
+
+      <div class="stat">
+        Найдено всего
+        <div class="value" id="totalCount">0</div>
+      </div>
+
+      <div class="stat">
+        Актуальных
+        <div class="value" id="newCount">0</div>
+      </div>
+
+      <div class="stat">
+        Активных профилей
+        <div class="value" id="profileCount">0</div>
+      </div>
+
+      <div class="stat">
+        Telegram
+        <div class="value" id="telegramStatus">—</div>
+      </div>
+
+    </div>
+
+
+    <div class="card">
+
+      <h2>Тариф и ограничения</h2>
+
+      <div class="plan-grid">
+
+        <div class="plan-item">
+          <div class="plan-label">Тариф</div>
+          <div class="plan-value" id="planTariff">—</div>
+        </div>
+
+        <div class="plan-item">
+          <div class="plan-label">Профили поиска</div>
+          <div class="plan-value" id="planProfiles">—</div>
+        </div>
+
+        <div class="plan-item">
+          <div class="plan-label">Telegram</div>
+          <div class="plan-value" id="planTelegram">—</div>
+        </div>
+
+        <div class="plan-item">
+          <div class="plan-label">Источники</div>
+          <div class="plan-value" id="planSources">—</div>
+        </div>
+
+        <div class="plan-item">
+          <div class="plan-label">Оплачено до</div>
+          <div class="plan-value" id="planExpires">—</div>
+        </div>
+
+        <div class="plan-item">
+          <div class="plan-label">Оплата</div>
+          <div class="plan-value" id="planPayment">—</div>
+        </div>
+
+      </div>
+
+    </div>
+
+
+    <div class="card onboarding-card" id="onboardingCard">
+
+      <h2>Первые шаги</h2>
+
+      <p class="onboarding-intro">
+        Настройте кабинет один раз — дальше Tender Radar будет работать по вашему профилю.
+      </p>
+
+      <div class="onboarding-grid">
+
+        <div id="onboardingStep1" class="onboarding-step waiting">
+          <div class="onboarding-number">1</div>
+          <div class="onboarding-title">Создайте профиль поиска</div>
+          <div class="onboarding-text">
+            Укажите, какие товары или услуги нужно искать, и что исключать.
+          </div>
+          <div id="onboardingStatus1" class="onboarding-status waiting">Ожидает</div>
+        </div>
+
+        <div id="onboardingStep2" class="onboarding-step waiting">
+          <div class="onboarding-number">2</div>
+          <div class="onboarding-title">Telegram — по желанию</div>
+          <div class="onboarding-text">
+            Подключите Telegram для автоматических уведомлений или выберите «Пока не нужно».
+          </div>
+          <div id="onboardingStatus2" class="onboarding-status waiting">Ожидает</div>
+        </div>
+
+        <div id="onboardingStep3" class="onboarding-step waiting">
+          <div class="onboarding-number">3</div>
+          <div class="onboarding-title">Получайте подходящие тендеры</div>
+          <div class="onboarding-text">
+            Система будет показывать найденные совпадения в блоке «Последние тендеры».
+          </div>
+          <div id="onboardingStatus3" class="onboarding-status waiting">Ожидает</div>
+        </div>
+
+      </div>
+
+    </div>
+
+
+    <div class="card telegram-card" id="telegramCard">
+
+      <div class="telegram-summary">
+
+        <div>
+          <h2 style="margin-top:0">Telegram</h2>
+          <div id="telegramConnectionState" class="telegram-state">
+            Не подключён
+          </div>
+          <div class="hint" style="margin-top:8px;margin-bottom:0">
+            Telegram — необязательный канал. Подключите его, если хотите получать автоматические уведомления о новых подходящих тендерах.
+          </div>
+        </div>
+
+        <div class="button-row" style="margin-top:0">
+          <button
+            id="connectTelegramButton"
+            class="success-button"
+            onclick="showTelegramConnect()"
+          >
+            Подключить Telegram
+          </button>
+
+          <button
+            id="skipTelegramButton"
+            class="secondary"
+            onclick="skipTelegram()"
+          >
+            Пока не нужно
+          </button>
+        </div>
+
+      </div>
+
+      <div id="telegramConnectForm" class="telegram-form">
+
+        <h3>Подключение Telegram</h3>
+
+        <div class="hint" style="margin-bottom:14px">
+          Нажмите официальную кнопку Telegram ниже. Telegram сам предложит подтвердить нужный аккаунт. Никакой Chat ID вводить не нужно.
+        </div>
+
+        <div id="telegramOfficialLogin">
+          <script
+            async
+            src="https://telegram.org/js/telegram-widget.js?22"
+            data-telegram-login="mn_tender_radar_bot"
+            data-size="large"
+            data-userpic="false"
+            data-request-access="write"
+            data-onauth="onTelegramAuth(user)"
+          ></script>
+        </div>
+
+        <div class="button-row" style="margin-top:14px">
+          <button
+            class="secondary"
+            onclick="cancelTelegramConnect()"
+          >
+            Отмена
+          </button>
+        </div>
+
+      </div>
+
+    </div>
+
+    <div class="card">
+
+      <div class="top-row">
+
+        <h2>
+          Профиль поиска
+        </h2>
+
+        <button
+          id="editProfileButton"
+          class="secondary"
+          onclick="toggleProfileEdit()"
+        >
+          Редактировать профиль
+        </button>
+
+        <button
+          id="createProfileButton"
+          class="success-button"
+          style="display:none"
+          onclick="showCreateProfile()"
+        >
+          Создать профиль поиска
+        </button>
+
+      </div>
+
+      <div id="profileView">
+
+        <p>
+          <strong>Название:</strong>
+          <span id="profileName">—</span>
+        </p>
+
+        <p>
+          <strong>Ищем:</strong>
+        </p>
+
+        <div id="includeKeywords"></div>
+
+        <p>
+          <strong>Исключаем:</strong>
+        </p>
+
+        <div id="excludeKeywords"></div>
+
+        <p>
+          <strong>Источники:</strong>
+        </p>
+        <div id="profileSources"></div>
+
+        <div id="emptyProfileBox" class="empty-profile">
+          <p>
+            У вас пока нет профиля поиска. Создайте первый профиль —
+            система будет использовать его для подбора тендеров.
+          </p>
+          <button
+            class="success-button"
+            onclick="showCreateProfile()"
+          >
+            Создать первый профиль
+          </button>
+        </div>
+
+      </div>
+
+
+      <div
+        id="profileCreate"
+        class="edit-box"
+      >
+
+        <h3>
+          Создание первого профиля
+        </h3>
+
+        <label>
+          Название профиля
+        </label>
+
+        <input
+          id="createProfileName"
+          type="text"
+          placeholder="Например: Клининговые услуги"
+        >
+
+        <label>
+          Ключевые слова
+        </label>
+
+        <textarea
+          id="createIncludeKeywords"
+          placeholder="Например: клининг, уборка, уборка помещений"
+        ></textarea>
+
+        <div class="hint">
+          Слова вводите через запятую.
+        </div>
+
+        <label>
+          Исключения
+        </label>
+
+        <textarea
+          id="createExcludeKeywords"
+          placeholder="Например: вакансия, аренда"
+        ></textarea>
+
+        <div class="hint">
+          Можно оставить пустым.
+        </div>
+
+        <label>Источники поиска</label>
+        <div class="source-box">
+          <div id="createSourceOptions" class="source-options"></div>
+          <div id="createSourceCounter" class="source-counter">Выбрано: 0 / —</div>
+        </div>
+
+        <div class="button-row">
+          <button
+            class="success-button"
+            onclick="createProfile()"
+          >
+            Создать профиль
+          </button>
+
+          <button
+            class="secondary"
+            onclick="cancelCreateProfile()"
+          >
+            Отмена
+          </button>
+        </div>
+
+      </div>
+
+
+      <div
+        id="profileEdit"
+        class="edit-box"
+      >
+
+        <h3>
+          Редактирование профиля
+        </h3>
+
+        <label>
+          Название профиля
+        </label>
+
+        <input
+          id="editProfileName"
+          type="text"
+        >
+
+
+        <label>
+          Ключевые слова
+        </label>
+
+        <textarea
+          id="editIncludeKeywords"
+        ></textarea>
+
+        <div class="hint">
+          Слова вводите через запятую.
+          Например: ноутбук, ноутбуки, компьютер
+        </div>
+
+
+        <label>
+          Исключения
+        </label>
+
+        <textarea
+          id="editExcludeKeywords"
+        ></textarea>
+
+        <div class="hint">
+          Например: ремонт, обслуживание, заправка
+        </div>
+
+        <label>Источники поиска</label>
+        <div class="source-box">
+          <div id="editSourceOptions" class="source-options"></div>
+          <div id="editSourceCounter" class="source-counter">Выбрано: 0 / —</div>
+        </div>
+
+
+        <div class="button-row">
+
+          <button
+            class="success-button"
+            onclick="saveProfile()"
+          >
+            Сохранить
+          </button>
+
+          <button
+            class="secondary"
+            onclick="cancelProfileEdit()"
+          >
+            Отмена
+          </button>
+
+        </div>
+
+      </div>
+
+    </div>
+
+
+    <div class="card radar-panel">
+
+      <div class="radar-header">
+        <div class="radar-title-wrap">
+          <h2>РАДАР ТЕНДЕРОВ</h2>
+          <p class="radar-subtitle">
+            Актуальные совпадения по вашему профилю поиска
+          </p>
+        </div>
+
+        <div class="radar-live">
+          <span class="radar-dot"></span>
+          СИСТЕМА РАБОТАЕТ
+        </div>
+      </div>
+
+      <div class="radar-body">
+
+        <div class="radar-kpis">
+          <div class="radar-kpi" role="button" tabindex="0" data-kpi-period="all" onclick="radarKpiClick('all')" onkeydown="radarKpiKey(event,'all')" title="Показать все актуальные тендеры">
+            <div class="radar-kpi-label">Актуальных</div>
+            <div class="radar-kpi-value" id="radarActiveCount">0</div>
+          </div>
+          <div class="radar-kpi" role="button" tabindex="0" data-kpi-period="48h" onclick="radarKpiClick('48h')" onkeydown="radarKpiKey(event,'48h')" title="Показать срочные тендеры до 48 часов">
+            <div class="radar-kpi-label">Срочные ≤ 48 ч</div>
+            <div class="radar-kpi-value" id="radarUrgentCount">0</div>
+          </div>
+          <div class="radar-kpi" role="button" tabindex="0" data-kpi-period="3d" onclick="radarKpiClick('3d')" onkeydown="radarKpiKey(event,'3d')" title="Показать тендеры до 3 дней">
+            <div class="radar-kpi-label">До 3 дней</div>
+            <div class="radar-kpi-value" id="radarThreeDayCount">0</div>
+          </div>
+          <div class="radar-kpi" role="button" tabindex="0" data-kpi-period="7d" onclick="radarKpiClick('7d')" onkeydown="radarKpiKey(event,'7d')" title="Показать тендеры до 7 дней">
+            <div class="radar-kpi-label">До 7 дней</div>
+            <div class="radar-kpi-value" id="radarWeekCount">0</div>
+          </div>
+          <div class="radar-kpi" role="button" tabindex="0" data-kpi-period="amount" onclick="radarKpiClick('amount')" onkeydown="radarKpiKey(event,'amount')" title="Показать все тендеры по убыванию суммы">
+            <div class="radar-kpi-label">Общая сумма</div>
+            <div class="radar-kpi-value" id="radarTotalAmount">0 ₸</div>
+          </div>
+        </div>
+
+        <p class="radar-period-help"><strong>Фильтр по сроку подачи заявок:</strong> здесь отображаются тендеры, у которых приём заявок заканчивается сегодня, в ближайшие 3 или 7 дней. Часы радара — UTC+6; сроки Госзакуп отображаются по времени официального портала.</p>
+        <div class="radar-results-note" id="radarKzClock" aria-live="off">Время Казахстана: —</div>
+        <div class="radar-periods">
+          <button class="radar-filter-btn active" data-radar-period="all" onclick="radarSetPeriod('all')">Все</button>
+          <button class="radar-filter-btn" data-radar-period="today" onclick="radarSetPeriod('today')">Сегодня</button>
+          <button class="radar-filter-btn" data-radar-period="3d" onclick="radarSetPeriod('3d')">До 3 дней</button>
+          <button class="radar-filter-btn" data-radar-period="7d" onclick="radarSetPeriod('7d')">До 7 дней</button>
+        </div>
+
+        <div class="radar-workqueue">
+          <div class="radar-workqueue-title">
+            Рабочая очередь
+          </div>
+
+          <div class="radar-workqueue-buttons">
+            <button class="radar-work-btn active" data-radar-work="all" onclick="radarSetWorkFilter('all')">
+              Все <span class="radar-work-count" id="workCountAll">0</span>
+            </button>
+
+            <button class="radar-work-btn" data-radar-work="favorite" onclick="radarSetWorkFilter('favorite')">
+              ★ Избранное <span class="radar-work-count" id="workCountFavorite">0</span>
+            </button>
+
+            <button class="radar-work-btn" data-radar-work="interested" onclick="radarSetWorkFilter('interested')">
+              Интересен <span class="radar-work-count" id="workCountInterested">0</span>
+            </button>
+
+            <button class="radar-work-btn" data-radar-work="in_work" onclick="radarSetWorkFilter('in_work')">
+              В работу <span class="radar-work-count" id="workCountInWork">0</span>
+            </button>
+
+            <button class="radar-work-btn" data-radar-work="viewed" onclick="radarSetWorkFilter('viewed')">
+              Просмотрен <span class="radar-work-count" id="workCountViewed">0</span>
+            </button>
+
+            <button class="radar-work-btn" data-radar-work="rejected" onclick="radarSetWorkFilter('rejected')">
+              Не подходит <span class="radar-work-count" id="workCountRejected">0</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="radar-toolbar">
+          <input
+            id="radarSearch"
+            type="text"
+            placeholder="Поиск: заказчик, название, лот, ключевое слово"
+            oninput="radarApplyFilters(true)"
+          >
+
+          <select id="radarSource" onchange="radarApplyFilters(true)">
+            <option value="all">Все источники</option>
+            <option value="goszakup">Госзакуп</option>
+            <option value="samruk">Самрук-Казына</option>
+          </select>
+
+          <input
+            id="radarAmountMin"
+            type="number"
+            min="0"
+            step="1000"
+            placeholder="Сумма от, ₸"
+            oninput="radarApplyFilters(true)"
+          >
+
+          <select id="radarSort" onchange="radarApplyFilters(true)">
+            <option value="deadline">Сначала срочные</option>
+            <option value="amount_desc">Сумма: по убыванию</option>
+            <option value="newest">Сначала новые</option>
+          </select>
+        </div>
+
+        <div class="radar-results-note" id="tenderListNote">
+          Загружаем актуальные тендеры...
+        </div>
+
+        <div id="tenders">
+          Загрузка...
+        </div>
+
+        <nav class="radar-pagination" id="radarPagination" aria-label="Страницы тендеров"></nav>
+
+      </div>
+
+    </div>
+
+
+    <!-- Protocol 20.2: feedback for errors and suggestions -->
+    <div class="card feedback-card">
+      <div class="feedback-head">
+        <div>
+          <h3>Обратная связь</h3>
+          <p>Сообщить об ошибке или оставить предложение.</p>
+        </div>
+
+        <button
+          id="feedbackToggleBtn"
+          class="secondary"
+          onclick="toggleFeedbackForm()"
+        >
+          Сообщить
+        </button>
+      </div>
+
+      <div id="feedbackForm" class="feedback-form">
+        <label for="feedbackKind"><strong>Тип сообщения</strong></label>
+        <select id="feedbackKind">
+          <option value="error">Ошибка</option>
+          <option value="suggestion">Предложение</option>
+        </select>
+
+        <label for="feedbackText"><strong>Сообщение</strong></label>
+        <textarea
+          id="feedbackText"
+          maxlength="2000"
+          placeholder="Кратко опишите, что произошло или что вы предлагаете улучшить"
+        ></textarea>
+
+        <button
+          id="feedbackSendBtn"
+          class="primary"
+          onclick="submitFeedback()"
+        >
+          Отправить
+        </button>
+
+        <div id="feedbackLocalMessage" class="feedback-local-message"></div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+
+<footer>
+  Tender Radar KZ Commercial — Client Cabinet
+</footer>
+
+
+<script>
+
+// ===== Protocol 19.2: server-side Gumroad license binding =====
+// First activation: Gumroad key -> account -> secure server-side license binding.
+// Subsequent access: email + password only; validity is checked from commercial.clients.
+
+const SUPABASE_URL =
+  "https://ilfxyvsqintvjbifqxvr.supabase.co";
+
+const SUPABASE_KEY =
+  "sb_publishable_GEl1zhHAxT_i8zU2F86cOA_-G6n7uBH";
+
+const sb =
+  supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_KEY
+  );
+
+const db =
+  sb.schema("commercial");
+
+
+const GUMROAD_VERIFY_URL =
+  "https://ilfxyvsqintvjbifqxvr.supabase.co/functions/v1/gumroad-license-verify";
+
+// Protocol 20 — server-side Telegram binding.
+// Bot token stays only in Supabase Edge Function secrets.
+const TELEGRAM_BIND_URL =
+  "https://ilfxyvsqintvjbifqxvr.supabase.co/functions/v1/commercial-telegram-connect";
+
+let gumroadLicenseVerified = false;
+let gumroadLicenseEmail = "";
+let gumroadLicenseMeta = null;
+
+const GUMROAD_SESSION_META_KEY = "tr_gumroad_license_meta";
+
+function normalizeEmail(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
+
+function savePendingLicenseMeta(meta) {
+  gumroadLicenseMeta = meta || null;
+
+  if (gumroadLicenseMeta) {
+    sessionStorage.setItem(
+      GUMROAD_SESSION_META_KEY,
+      JSON.stringify(gumroadLicenseMeta)
+    );
+  } else {
+    sessionStorage.removeItem(GUMROAD_SESSION_META_KEY);
+  }
+}
+
+function loadPendingLicenseMeta() {
+  try {
+    const raw = sessionStorage.getItem(GUMROAD_SESSION_META_KEY);
+    gumroadLicenseMeta = raw ? JSON.parse(raw) : null;
+  } catch (_) {
+    gumroadLicenseMeta = null;
+    sessionStorage.removeItem(GUMROAD_SESSION_META_KEY);
+  }
+
+  return gumroadLicenseMeta;
+}
+
+function clearPendingLicenseMeta() {
+  gumroadLicenseVerified = false;
+  gumroadLicenseEmail = "";
+  gumroadLicenseMeta = null;
+
+  sessionStorage.removeItem("tr_gumroad_license_verified");
+  sessionStorage.removeItem("tr_gumroad_license_email");
+  sessionStorage.removeItem(GUMROAD_SESSION_META_KEY);
+}
+
+function hideAuthBlocks() {
+  [
+    "licenseBlock",
+    "loginBlock",
+    "registrationBlock",
+    "firstRegistrationBlock",
+    "recoveryRequestBlock",
+    "newPasswordBlock"
+  ].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = "none";
+  });
+}
+
+function showLoginHome(message) {
+  hideAuthBlocks();
+
+  document.getElementById("cabinet").style.display = "none";
+  document.getElementById("loginBlock").style.display = "block";
+
+  const emailInput = document.getElementById("email");
+  if (emailInput) {
+    emailInput.readOnly = false;
+  }
+
+  if (message) {
+    showInfo(message);
+  } else {
+    clearMessage();
+  }
+}
+
+// ===== Protocol 19.1: expired-session recovery =====
+// An expired Supabase session must NEVER send an existing client back
+// to the Gumroad license gate. The client simply signs in again.
+function isExpiredAuthError(error) {
+  const msg = String(error?.message || error || "").toLowerCase();
+  return (
+    msg.includes("jwt expired") ||
+    msg.includes("invalid jwt") ||
+    msg.includes("token has expired") ||
+    msg.includes("refresh token")
+  );
+}
+
+async function recoverExpiredSession() {
+  try {
+    await sb.auth.signOut({ scope: "local" });
+  } catch (_) {
+    try {
+      await sb.auth.signOut();
+    } catch (_) {}
+  }
+
+  currentClientId = null;
+  currentProfileId = null;
+  currentProfile = null;
+  currentClient = null;
+  currentTelegramCount = 0;
+  availableSources = [];
+
+  const passwordInput = document.getElementById("password");
+  if (passwordInput) passwordInput.value = "";
+
+  showLoginHome(
+    "Сессия истекла. Войдите снова по email и паролю. Лицензионный ключ повторно вводить не нужно."
+  );
+}
+
+function showLicenseActivation() {
+  clearMessage();
+  hideAuthBlocks();
+  document.getElementById("cabinet").style.display = "none";
+  document.getElementById("licenseBlock").style.display = "block";
+
+  const keyInput = document.getElementById("gumroadLicenseKey");
+  if (keyInput) {
+    keyInput.value = "";
+    keyInput.focus();
+  }
+
+  showInfo(
+    "Первичная активация: введите ключ Gumroad. После успешной привязки этот ключ при обычном входе больше не потребуется."
+  );
+}
+
+async function bindPendingLicenseToUser(user) {
+  const meta = loadPendingLicenseMeta();
+
+  if (!meta || !meta.verified || !meta.email || !meta.license_key) {
+    return { bound: false, skipped: true };
+  }
+
+  if (
+    !user ||
+    normalizeEmail(user.email) !== normalizeEmail(meta.email)
+  ) {
+    throw new Error("Email аккаунта не совпадает с email покупателя Gumroad.");
+  }
+
+  const {
+    data: { session }
+  } =
+    await sb.auth.getSession();
+
+  if (!session?.access_token) {
+    throw new Error("Сессия пользователя недействительна. Войдите снова.");
+  }
+
+  const response =
+    await fetch(
+      GUMROAD_VERIFY_URL,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer " + session.access_token
+        },
+        body: JSON.stringify({
+          license_key: meta.license_key,
+          bind: true
+        })
+      }
+    );
+
+  let result = {};
+
+  try {
+    result = await response.json();
+  } catch (_) {
+    result = {};
+  }
+
+  if (
+    !response.ok ||
+    !result ||
+    result.success !== true ||
+    result.bound !== true
+  ) {
+    throw new Error(
+      result?.error ||
+      "Не удалось привязать лицензию к аккаунту."
+    );
+  }
+
+  clearPendingLicenseMeta();
+
+  return {
+    bound: true,
+    client_id: result.client_id || null
+  };
+}
+
+function showLicenseGate(message) {
+
+  clearPendingLicenseMeta();
+
+  document
+    .getElementById("licenseBlock")
+    .style.display = "block";
+
+  document
+    .getElementById("loginBlock")
+    .style.display = "none";
+
+  document
+    .getElementById("registrationBlock")
+    .style.display = "none";
+
+  const firstRegistrationBlock =
+    document.getElementById("firstRegistrationBlock");
+
+  if (firstRegistrationBlock) {
+    firstRegistrationBlock.style.display = "none";
+  }
+
+  document
+    .getElementById("recoveryRequestBlock")
+    .style.display = "none";
+
+  document
+    .getElementById("newPasswordBlock")
+    .style.display = "none";
+
+  document
+    .getElementById("cabinet")
+    .style.display = "none";
+
+  const keyInput =
+    document.getElementById("gumroadLicenseKey");
+
+  if (keyInput) {
+    keyInput.value = "";
+  }
+
+  if (message) {
+    showInfo(message);
+  } else {
+    clearMessage();
+  }
+}
+
+function showFirstRegistrationAfterLicense(email) {
+
+  gumroadLicenseVerified = true;
+  gumroadLicenseEmail = normalizeEmail(email);
+
+  sessionStorage.setItem(
+    "tr_gumroad_license_verified",
+    "1"
+  );
+
+  sessionStorage.setItem(
+    "tr_gumroad_license_email",
+    gumroadLicenseEmail
+  );
+
+  document
+    .getElementById("licenseBlock")
+    .style.display = "none";
+
+  document
+    .getElementById("loginBlock")
+    .style.display = "none";
+
+  document
+    .getElementById("registrationBlock")
+    .style.display = "none";
+
+  document
+    .getElementById("firstRegistrationBlock")
+    .style.display = "block";
+
+  const emailInput =
+    document.getElementById("firstRegisterEmail");
+
+  if (emailInput) {
+    emailInput.value = gumroadLicenseEmail;
+  }
+
+  showSuccess(
+    "Лицензия подтверждена. Если это ваш первый вход — придумайте пароль."
+  );
+}
+
+
+function showExistingLoginAfterLicense() {
+
+  clearMessage();
+
+  document
+    .getElementById("firstRegistrationBlock")
+    .style.display = "none";
+
+  document
+    .getElementById("loginBlock")
+    .style.display = "block";
+
+  const emailInput =
+    document.getElementById("email");
+
+  if (emailInput) {
+    emailInput.value = gumroadLicenseEmail;
+    emailInput.readOnly = true;
+  }
+
+  document
+    .getElementById("password")
+    .value = "";
+
+  showInfo(
+    "Введите ранее созданный пароль."
+  );
+}
+
+
+async function createFirstAccount() {
+
+  clearMessage();
+
+  if (!gumroadLicenseVerified || !gumroadLicenseEmail) {
+    showLicenseGate();
+    showError("Сначала подтвердите лицензионный ключ Gumroad.");
+    return;
+  }
+
+  const company =
+    document
+      .getElementById("firstRegisterCompany")
+      .value
+      .trim();
+
+  const password =
+    document
+      .getElementById("firstRegisterPassword")
+      .value;
+
+  const repeat =
+    document
+      .getElementById("firstRegisterPasswordRepeat")
+      .value;
+
+  if (!company || !password || !repeat) {
+    showError("Укажите название компании и дважды введите пароль.");
+    return;
+  }
+
+  if (password.length < 6) {
+    showError("Пароль должен содержать не менее 6 символов.");
+    return;
+  }
+
+  if (password !== repeat) {
+    showError("Пароли не совпадают.");
+    return;
+  }
+
+  showInfo("Создаём аккаунт...");
+
+  const { data, error } =
+    await sb.auth.signUp({
+      email: gumroadLicenseEmail,
+      password,
+      options: {
+        data: {
+          company_name: company,
+          registration_source: "gumroad_license"
+        },
+        emailRedirectTo:
+          window.location.origin +
+          window.location.pathname
+      }
+    });
+
+  if (error) {
+    const msg = String(error.message || "");
+
+    if (
+      msg.toLowerCase().includes("already") ||
+      msg.toLowerCase().includes("registered") ||
+      msg.toLowerCase().includes("exists")
+    ) {
+      showExistingLoginAfterLicense();
+      showError(
+        "Для этой почты аккаунт уже существует. Введите ранее созданный пароль."
+      );
+      return;
+    }
+
+    showError(
+      "Не удалось создать аккаунт: " + msg
+    );
+    return;
+  }
+
+  document
+    .getElementById("firstRegisterPassword")
+    .value = "";
+
+  document
+    .getElementById("firstRegisterPasswordRepeat")
+    .value = "";
+
+  if (data.session && data.user) {
+    try {
+      await bindPendingLicenseToUser(data.user);
+      showSuccess(
+        "Аккаунт создан, лицензия Gumroad привязана. В дальнейшем входите только по email и паролю."
+      );
+      await openCabinet(data.user);
+      return;
+    } catch (bindError) {
+      console.error(bindError);
+      showError(
+        "Аккаунт создан, но привязку лицензии нужно завершить: " +
+        (bindError.message || bindError)
+      );
+    }
+  } else {
+    showSuccess(
+      "Аккаунт создан. Проверьте почту и подтвердите email. После подтверждения вернитесь и войдите — лицензия привяжется автоматически."
+    );
+  }
+
+  document
+    .getElementById("firstRegistrationBlock")
+    .style.display = "none";
+
+  document
+    .getElementById("loginBlock")
+    .style.display = "block";
+
+  const loginEmail =
+    document.getElementById("email");
+
+  if (loginEmail) {
+    loginEmail.value = gumroadLicenseEmail;
+    loginEmail.readOnly = true;
+  }
+}
+
+
+async function verifyGumroadLicense() {
+
+  clearMessage();
+
+  const input =
+    document.getElementById("gumroadLicenseKey");
+
+  const button =
+    document.getElementById("gumroadLicenseButton");
+
+  const licenseKey =
+    String(input?.value || "").trim();
+
+  if (!licenseKey) {
+    showError("Введите лицензионный ключ Gumroad.");
+    return;
+  }
+
+  if (button) {
+    button.disabled = true;
+    button.textContent = "Проверяем...";
+  }
+
+  showInfo("Проверяем лицензию Gumroad...");
+
+  try {
+
+    const response =
+      await fetch(
+        GUMROAD_VERIFY_URL,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            license_key: licenseKey
+          })
+        }
+      );
+
+    let result = {};
+
+    try {
+      result = await response.json();
+    } catch (_) {
+      result = {};
+    }
+
+    if (
+      !response.ok ||
+      !result ||
+      result.success !== true ||
+      result.active !== true ||
+      !result.email
+    ) {
+      showLicenseGate();
+      showError(
+        result?.error ||
+        "Лицензионный ключ не подтверждён или доступ уже не активен."
+      );
+      return;
+    }
+
+    const paidUntil =
+      result.paid_until
+        ? new Date(result.paid_until)
+        : null;
+
+    if (
+      paidUntil &&
+      !Number.isNaN(paidUntil.getTime()) &&
+      paidUntil.getTime() < Date.now()
+    ) {
+      showLicenseGate();
+      showError(
+        "Срок оплаченного доступа по этой лицензии уже истёк."
+      );
+      return;
+    }
+
+    const verifiedEmail =
+      normalizeEmail(result.email);
+
+    savePendingLicenseMeta({
+      verified: true,
+      email: verifiedEmail,
+      license_key: licenseKey,
+      purchase_date: result.purchase_date || null,
+      paid_until: result.paid_until || null,
+      verified_at: new Date().toISOString(),
+      product_name: result.product_name || ""
+    });
+
+    const {
+      data: { session }
+    } =
+      await sb.auth.getSession();
+
+    if (
+      session?.user &&
+      normalizeEmail(session.user.email) !== verifiedEmail
+    ) {
+      await sb.auth.signOut();
+    }
+
+    showFirstRegistrationAfterLicense(verifiedEmail);
+
+    const {
+      data: { session: freshSession }
+    } =
+      await sb.auth.getSession();
+
+    if (
+      freshSession?.user &&
+      normalizeEmail(freshSession.user.email) === verifiedEmail
+    ) {
+      clearMessage();
+      await bindPendingLicenseToUser(freshSession.user);
+      await openCabinet(freshSession.user);
+    }
+
+  } catch (error) {
+
+    console.error(error);
+
+    showLicenseGate();
+
+    showError(
+      "Не удалось проверить лицензию. Проверьте интернет-соединение и попробуйте ещё раз."
+    );
+
+  } finally {
+
+    if (button) {
+      button.disabled = false;
+      button.textContent = "Проверить ключ";
+    }
+
+  }
+}
+
+
+let currentClientId = null;
+let currentProfileId = null;
+let currentProfile = null;
+let currentClient = null;
+
+
+let radarTenderItems = [];
+let radarPeriod = "all";
+let radarWorkFilter = "all";
+let radarExpiredHidden = 0;
+let radarVisibleLimit = 10;
+const radarPageSize = 10;
+let radarCurrentPage = 1;
+
+// Время для сроков и фильтров всегда сравнивается как UTC timestamp.
+// Показываем время UTC+6 для согласования с часами пользователя; UTC timestamps не меняем.
+function radarUpdateKazakhstanClock() {
+  const el = document.getElementById("radarKzClock");
+  if (!el) return;
+  const nowKz = new Date(Date.now() + 6 * 60 * 60 * 1000);
+  const pad = n => String(n).padStart(2, "0");
+  el.textContent = "Время радара (UTC+6): " +
+    pad(nowKz.getUTCDate()) + "." + pad(nowKz.getUTCMonth() + 1) + "." +
+    nowKz.getUTCFullYear() + ", " + pad(nowKz.getUTCHours()) + ":" +
+    pad(nowKz.getUTCMinutes()) + ". Сроки Госзакуп показаны по времени официального портала.";
+}
+
+// Каждую минуту удаляем из текущего списка истекшие сроки без F5.
+// Не трогаем данные пользователя, статусы и Telegram.
+function radarRefreshExpiredTenders() {
+  radarUpdateKazakhstanClock();
+  if (!radarTenderItems.length) return;
+  const nowMs = Date.now();
+  const before = radarTenderItems.length;
+  radarTenderItems = radarTenderItems.filter(item =>
+    item.deadlineMs === null || !Number.isFinite(item.deadlineMs) || item.deadlineMs > nowMs
+  );
+  const removed = before - radarTenderItems.length;
+  if (removed) {
+    radarExpiredHidden += removed;
+    radarUpdateKpis();
+    radarApplyFilters(false);
+    const newCount = document.getElementById("newCount");
+    if (newCount) newCount.textContent = radarTenderItems.length;
+  }
+}
+setInterval(radarRefreshExpiredTenders, 60 * 1000);
+radarUpdateKazakhstanClock();
+
+
+function radarDaysLeft(deadlineMs) {
+
+  if (!deadlineMs || Number.isNaN(deadlineMs)) {
+    return null;
+  }
+
+  return (
+    deadlineMs - Date.now()
+  ) / (24 * 60 * 60 * 1000);
+
+}
+
+function radarUrgencyInfo(deadlineMs) {
+
+  const days =
+    radarDaysLeft(deadlineMs);
+
+  if (days === null) {
+    return {
+      text: "Срок не указан",
+      className: "urgency-normal"
+    };
+  }
+
+  if (days <= 2) {
+    return {
+      text: "Срочно ≤ 48 ч",
+      className: "urgency-hot"
+    };
+  }
+
+  if (days <= 7) {
+    return {
+      text: "До 7 дней",
+      className: "urgency-soon"
+    };
+  }
+
+  return {
+    text: "Актуальный",
+    className: "urgency-normal"
+  };
+
+}
+
+function radarKpiClick(period) {
+  if (period === "amount") {
+    const sort = document.getElementById("radarSort");
+    if (sort) sort.value = "amount_desc";
+    radarSetPeriod("all");
+  } else {
+    radarSetPeriod(period);
+  }
+  document.querySelectorAll("[data-kpi-period]").forEach(card => {
+    const chosen = card.getAttribute("data-kpi-period") === period;
+    card.classList.toggle("selected", chosen);
+    card.setAttribute("aria-pressed", chosen ? "true" : "false");
+  });
+}
+
+function radarKpiKey(event, period) {
+  if (event.key === "Enter" || event.key === " ") {
+    event.preventDefault();
+    radarKpiClick(period);
+  }
+}
+
+function radarSetPeriod(period) {
+  document.querySelectorAll("[data-kpi-period]").forEach(card => {
+    card.classList.remove("selected");
+    card.setAttribute("aria-pressed", "false");
+  });
+
+  radarPeriod =
+    period || "all";
+
+  radarVisibleLimit =
+    radarPageSize;
+  radarCurrentPage = 1;
+
+  document
+    .querySelectorAll(
+      "[data-radar-period]"
+    )
+    .forEach(btn => {
+
+      btn.classList.toggle(
+        "active",
+        btn.getAttribute(
+          "data-radar-period"
+        ) === radarPeriod
+      );
+
+    });
+
+  radarApplyFilters();
+
+}
+
+
+function radarSetWorkFilter(filter) {
+
+  radarWorkFilter =
+    filter || "all";
+
+  radarVisibleLimit =
+    radarPageSize;
+  radarCurrentPage = 1;
+
+  document
+    .querySelectorAll("[data-radar-work]")
+    .forEach(btn => {
+      btn.classList.toggle(
+        "active",
+        btn.getAttribute("data-radar-work") === radarWorkFilter
+      );
+    });
+
+  radarApplyFilters();
+
+}
+
+function radarMatchesWorkFilter(item) {
+
+  const match = item.match || {};
+  const status = match.status || "new";
+
+  if (radarWorkFilter === "all") {
+    return true;
+  }
+
+  if (radarWorkFilter === "favorite") {
+    return Boolean(match.is_favorite);
+  }
+
+  return status === radarWorkFilter;
+
+}
+
+function radarUpdateWorkQueueCounts() {
+
+  const counts = {
+    all: radarTenderItems.length,
+    favorite: 0,
+    interested: 0,
+    in_work: 0,
+    viewed: 0,
+    rejected: 0
+  };
+
+  radarTenderItems.forEach(item => {
+
+    const match = item.match || {};
+
+    if (match.is_favorite) {
+      counts.favorite += 1;
+    }
+
+    const status = match.status || "new";
+
+    if (Object.prototype.hasOwnProperty.call(counts, status)) {
+      counts[status] += 1;
+    }
+
+  });
+
+  const map = {
+    workCountAll: counts.all,
+    workCountFavorite: counts.favorite,
+    workCountInterested: counts.interested,
+    workCountInWork: counts.in_work,
+    workCountViewed: counts.viewed,
+    workCountRejected: counts.rejected
+  };
+
+  Object.entries(map).forEach(([id, value]) => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.textContent = value;
+    }
+  });
+
+}
+
+
+function radarUpdateKpis() {
+
+  const active =
+    radarTenderItems.length;
+
+  const urgent =
+    radarTenderItems.filter(
+      item => {
+        const days =
+          radarDaysLeft(
+            item.deadlineMs
+          );
+
+        return (
+          days !== null &&
+          days >= 0 &&
+          days <= 2
+        );
+      }
+    ).length;
+
+  const threeDays = radarTenderItems.filter(item => {
+    const days = radarDaysLeft(item.deadlineMs);
+    return days !== null && days >= 0 && days <= 3;
+  }).length;
+
+  const week =
+    radarTenderItems.filter(
+      item => {
+        const days =
+          radarDaysLeft(
+            item.deadlineMs
+          );
+
+        return (
+          days !== null &&
+          days >= 0 &&
+          days <= 7
+        );
+      }
+    ).length;
+
+  const amount =
+    radarTenderItems.reduce(
+      (sum, item) =>
+        sum + (
+          Number(item.tender.amount) ||
+          0
+        ),
+      0
+    );
+
+  const activeEl =
+    document.getElementById(
+      "radarActiveCount"
+    );
+
+  const urgentEl =
+    document.getElementById(
+      "radarUrgentCount"
+    );
+
+  const threeDaysEl = document.getElementById("radarThreeDayCount");
+
+  const weekEl =
+    document.getElementById(
+      "radarWeekCount"
+    );
+
+  const amountEl =
+    document.getElementById(
+      "radarTotalAmount"
+    );
+
+  if (activeEl) {
+    activeEl.textContent =
+      active;
+  }
+
+  if (urgentEl) {
+    urgentEl.textContent =
+      urgent;
+  }
+
+  if (threeDaysEl) threeDaysEl.textContent = threeDays;
+
+  if (weekEl) {
+    weekEl.textContent =
+      week;
+  }
+
+  if (amountEl) {
+    amountEl.textContent =
+      new Intl.NumberFormat(
+        "ru-RU",
+        {
+          maximumFractionDigits: 0
+        }
+      ).format(amount) +
+      " ₸";
+  }
+
+}
+
+function radarMatchesPeriod(item) {
+  const deadlineMs = item.deadlineMs;
+  const nowMs = Date.now();
+  if (deadlineMs !== null && Number.isFinite(deadlineMs) && deadlineMs <= nowMs) return false;
+  if (radarPeriod === "all") return true;
+  if (deadlineMs === null || !Number.isFinite(deadlineMs)) return false;
+
+  // "Сегодня" — до конца календарного дня в отображаемом времени UTC+6,
+  // а не скользящие 24 часа от момента просмотра.
+  if (radarPeriod === "today") {
+    const kzOffsetMs = 6 * 60 * 60 * 1000;
+    const todayKz = new Date(nowMs + kzOffsetMs);
+    const tomorrowStartUtc = Date.UTC(
+      todayKz.getUTCFullYear(),
+      todayKz.getUTCMonth(),
+      todayKz.getUTCDate() + 1
+    ) - kzOffsetMs;
+    return deadlineMs < tomorrowStartUtc;
+  }
+
+  const days = (deadlineMs - nowMs) / (24 * 60 * 60 * 1000);
+  if (radarPeriod === "48h") return days <= 2;
+  if (radarPeriod === "3d") return days <= 3;
+  if (radarPeriod === "7d") return days <= 7;
+  return true;
+}
+
+const tenderStatusLabels = {
+  new: "Новый",
+  viewed: "Просмотрен",
+  interested: "Интересен",
+  in_work: "В работу",
+  rejected: "Не подходит"
+};
+
+function tenderStatusLabel(value) {
+  return tenderStatusLabels[value] || "Новый";
+}
+
+function findRadarItemByMatchId(matchId) {
+  return radarTenderItems.find(
+    item => Number(item.match.id) === Number(matchId)
+  ) || null;
+}
+
+function setTenderWorkNote(matchId, message, kind) {
+
+  const el =
+    document.getElementById(
+      "workNote_" + matchId
+    );
+
+  if (!el) {
+    return;
+  }
+
+  el.className =
+    "work-status-note" +
+    (
+      kind
+        ? " " + kind
+        : ""
+    );
+
+  el.textContent =
+    message || "";
+
+}
+
+async function updateTenderWorkStatus(matchId, newStatus) {
+
+  if (!tenderStatusLabels[newStatus]) {
+    return;
+  }
+
+  const item =
+    findRadarItemByMatchId(matchId);
+
+  if (!item) {
+    return;
+  }
+
+  const select =
+    document.getElementById(
+      "statusSelect_" + matchId
+    );
+
+  const previous =
+    item.match.status || "new";
+
+  if (select) {
+    select.disabled = true;
+  }
+
+  setTenderWorkNote(
+    matchId,
+    "Сохраняем статус…",
+    ""
+  );
+
+  const {
+    error
+  } =
+    await db
+      .from("client_tender_matches")
+      .update({
+        status: newStatus,
+        updated_at:
+          new Date().toISOString()
+      })
+      .eq(
+        "id",
+        matchId
+      )
+      .eq(
+        "client_id",
+        currentClientId
+      );
+
+  if (error) {
+
+    if (select) {
+      select.value =
+        previous;
+      select.disabled =
+        false;
+    }
+
+    setTenderWorkNote(
+      matchId,
+      "Не удалось сохранить статус.",
+      "error"
+    );
+
+    console.error(
+      "14C status update error:",
+      error
+    );
+
+    return;
+  }
+
+  item.match.status =
+    newStatus;
+
+  if (select) {
+    select.disabled =
+      false;
+  }
+
+  setTenderWorkNote(
+    matchId,
+    "Сохранено: " +
+      tenderStatusLabel(newStatus),
+    "ok"
+  );
+
+  radarUpdateWorkQueueCounts();
+
+  if (radarWorkFilter !== "all") {
+    radarApplyFilters(false);
+  }
+
+}
+
+async function toggleTenderFavorite(matchId) {
+
+  const item =
+    findRadarItemByMatchId(matchId);
+
+  if (!item) {
+    return;
+  }
+
+  const button =
+    document.getElementById(
+      "favoriteBtn_" + matchId
+    );
+
+  const nextValue =
+    !Boolean(
+      item.match.is_favorite
+    );
+
+  if (button) {
+    button.disabled =
+      true;
+  }
+
+  setTenderWorkNote(
+    matchId,
+    nextValue
+      ? "Добавляем в избранное…"
+      : "Убираем из избранного…",
+    ""
+  );
+
+  const {
+    error
+  } =
+    await db
+      .from("client_tender_matches")
+      .update({
+        is_favorite: nextValue,
+        updated_at:
+          new Date().toISOString()
+      })
+      .eq(
+        "id",
+        matchId
+      )
+      .eq(
+        "client_id",
+        currentClientId
+      );
+
+  if (error) {
+
+    if (button) {
+      button.disabled =
+        false;
+    }
+
+    setTenderWorkNote(
+      matchId,
+      "Не удалось изменить избранное.",
+      "error"
+    );
+
+    console.error(
+      "14C favorite update error:",
+      error
+    );
+
+    return;
+  }
+
+  item.match.is_favorite =
+    nextValue;
+
+  if (button) {
+
+    button.disabled =
+      false;
+
+    button.classList.toggle(
+      "active",
+      nextValue
+    );
+
+    button.textContent =
+      nextValue
+        ? "★ Избранное"
+        : "☆ Избранное";
+  }
+
+  setTenderWorkNote(
+    matchId,
+    nextValue
+      ? "Добавлено в избранное."
+      : "Удалено из избранного.",
+    "ok"
+  );
+
+  radarUpdateWorkQueueCounts();
+
+  if (radarWorkFilter === "favorite") {
+    radarApplyFilters(false);
+  }
+
+}
+
+
+function radarBuildTenderCard(item) {
+
+  const tender =
+    item.tender;
+
+  const match =
+    item.match;
+
+  const keywords =
+    item.keywords;
+
+  const div =
+    document.createElement(
+      "div"
+    );
+
+  div.className =
+    "tender";
+
+  const head =
+    document.createElement(
+      "div"
+    );
+
+  head.className =
+    "tender-head";
+
+  const title =
+    document.createElement(
+      "div"
+    );
+
+  title.className =
+    "tender-title";
+
+  title.textContent =
+    tender.title ||
+    "Тендер без названия";
+
+  const badges =
+    document.createElement(
+      "div"
+    );
+
+  badges.style.display =
+    "flex";
+
+  badges.style.gap =
+    "6px";
+
+  badges.style.flexWrap =
+    "wrap";
+
+  const source =
+    document.createElement(
+      "span"
+    );
+
+  source.className =
+    "tender-source";
+
+  source.textContent =
+    sourceName(
+      tender.source_code
+    ) ||
+    tender.source_code ||
+    "Источник";
+
+  const urgency =
+    radarUrgencyInfo(
+      item.deadlineMs
+    );
+
+  const urgencyBadge =
+    document.createElement(
+      "span"
+    );
+
+  urgencyBadge.className =
+    "tender-urgency " +
+    urgency.className;
+
+  urgencyBadge.textContent =
+    urgency.text;
+
+  badges.appendChild(source);
+  badges.appendChild(
+    urgencyBadge
+  );
+
+  head.appendChild(title);
+  head.appendChild(badges);
+  div.appendChild(head);
+
+  const grid =
+    document.createElement(
+      "div"
+    );
+
+  grid.className =
+    "tender-grid";
+
+  const publicLot =
+    (
+      tender.raw &&
+      tender.raw.lot_number
+    )
+      ? tender.raw.lot_number
+      : (
+          tender.source_lot_id ||
+          "—"
+        );
+
+  const fields = [
+    [
+      "Заказчик",
+      tender.customer_name || "—"
+    ],
+    [
+      "Сумма",
+      formatMoney(
+        tender.amount,
+        tender.currency
+      )
+    ],
+    [
+      "Срок подачи",
+      tender.source_code === "goszakup"
+        ? formatGoszakupDateTime(
+            tender.expires_at
+          )
+        : formatDateTime(
+            tender.expires_at
+          )
+    ],
+    [
+      "Лот",
+      publicLot
+    ]
+  ];
+
+  fields.forEach(([label, value]) => {
+
+    const field =
+      document.createElement(
+        "div"
+      );
+
+    field.className =
+      "tender-field";
+
+    const strong =
+      document.createElement(
+        "strong"
+      );
+
+    strong.textContent =
+      label + ": ";
+
+    field.appendChild(strong);
+
+    field.appendChild(
+      document.createTextNode(
+        value
+      )
+    );
+
+    grid.appendChild(field);
+
+  });
+
+  div.appendChild(grid);
+
+  const matchBox =
+    document.createElement(
+      "div"
+    );
+
+  matchBox.className =
+    "tender-match";
+
+  matchBox.textContent =
+    "Совпадение: " +
+    (
+      keywords.join(", ") ||
+      "—"
+    );
+
+  div.appendChild(matchBox);
+
+  const workbar =
+    document.createElement(
+      "div"
+    );
+
+  workbar.className =
+    "tender-workbar";
+
+  const statusSelect =
+    document.createElement(
+      "select"
+    );
+
+  statusSelect.className =
+    "tender-status-select";
+
+  statusSelect.id =
+    "statusSelect_" +
+    match.id;
+
+  [
+    ["new", "Новый"],
+    ["viewed", "Просмотрен"],
+    ["interested", "Интересен"],
+    ["in_work", "В работу"],
+    ["rejected", "Не подходит"]
+  ].forEach(
+    ([value, label]) => {
+
+      const option =
+        document.createElement(
+          "option"
+        );
+
+      option.value =
+        value;
+
+      option.textContent =
+        "Статус: " + label;
+
+      statusSelect.appendChild(
+        option
+      );
+
+    }
+  );
+
+  statusSelect.value =
+    match.status || "new";
+
+  statusSelect.addEventListener(
+    "change",
+    event => {
+      updateTenderWorkStatus(
+        match.id,
+        event.target.value
+      );
+    }
+  );
+
+  const favoriteBtn =
+    document.createElement(
+      "button"
+    );
+
+  favoriteBtn.type =
+    "button";
+
+  favoriteBtn.id =
+    "favoriteBtn_" +
+    match.id;
+
+  favoriteBtn.className =
+    "favorite-btn" +
+    (
+      match.is_favorite
+        ? " active"
+        : ""
+    );
+
+  favoriteBtn.textContent =
+    match.is_favorite
+      ? "★ Избранное"
+      : "☆ Избранное";
+
+  favoriteBtn.addEventListener(
+    "click",
+    () => {
+      toggleTenderFavorite(
+        match.id
+      );
+    }
+  );
+
+  const workNote =
+    document.createElement(
+      "div"
+    );
+
+  workNote.id =
+    "workNote_" +
+    match.id;
+
+  workNote.className =
+    "work-status-note";
+
+  workNote.textContent =
+    match.is_favorite
+      ? "Отмечено как избранное."
+      : "";
+
+  workbar.appendChild(
+    statusSelect
+  );
+
+  workbar.appendChild(
+    favoriteBtn
+  );
+
+  workbar.appendChild(
+    workNote
+  );
+
+  div.appendChild(
+    workbar
+  );
+
+  const actions =
+    document.createElement(
+      "div"
+    );
+
+  actions.className =
+    "tender-actions";
+
+  const foundAt =
+    document.createElement(
+      "span"
+    );
+
+  foundAt.className =
+    "tender-field";
+
+  foundAt.textContent =
+    "Найдено: " +
+    formatDateTime(
+      match.matched_at
+    );
+
+  actions.appendChild(foundAt);
+
+  let tenderUrl = "";
+
+  if (
+    tender.source_code === "goszakup" &&
+    tender.source_tender_id
+  ) {
+
+    const announcementBase =
+      String(
+        tender.source_tender_id
+      )
+        .trim()
+        .split("-")[0];
+
+    if (announcementBase) {
+      tenderUrl =
+        "https://old.goszakup.gov.kz/ru/announce/index/" +
+        encodeURIComponent(
+          announcementBase
+        );
+    }
+
+  }
+
+  if (
+    !tenderUrl &&
+    tender.public_url
+  ) {
+    tenderUrl =
+      String(
+        tender.public_url
+      ).trim();
+  }
+
+  if (tenderUrl) {
+
+    const link =
+      document.createElement(
+        "a"
+      );
+
+    link.className =
+      "tender-link";
+
+    link.href =
+      tenderUrl;
+
+    link.target =
+      "_blank";
+
+    link.rel =
+      "noopener noreferrer";
+
+    link.textContent =
+      "Открыть тендер";
+
+    actions.appendChild(link);
+
+  }
+
+  div.appendChild(actions);
+
+  return div;
+
+}
+
+function radarGoToPage(page) {
+  const next = Number(page);
+  if (!Number.isInteger(next) || next < 1) return;
+  radarCurrentPage = next;
+  radarApplyFilters(false);
+  const panel = document.querySelector('.radar-toolbar');
+  if (panel) panel.scrollIntoView({behavior: 'smooth', block: 'start'});
+}
+
+function radarRenderPagination(total) {
+  const nav = document.getElementById('radarPagination');
+  if (!nav) return;
+  nav.innerHTML = '';
+  const pages = Math.ceil(total / radarPageSize);
+  if (pages <= 1) return;
+
+  function addButton(label, page, disabled, active) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'radar-page-btn' + (active ? ' active' : '');
+    btn.textContent = label;
+    btn.disabled = disabled;
+    if (active) btn.setAttribute('aria-current', 'page');
+    btn.addEventListener('click', () => radarGoToPage(page));
+    nav.appendChild(btn);
+  }
+  function addDots() {
+    const span = document.createElement('span');
+    span.className = 'radar-page-dots';
+    span.textContent = '…';
+    nav.appendChild(span);
+  }
+
+  addButton('← Назад', radarCurrentPage - 1, radarCurrentPage === 1, false);
+  const candidates = new Set([1, pages]);
+  for (let i = radarCurrentPage - 2; i <= radarCurrentPage + 2; i++) {
+    if (i >= 1 && i <= pages) candidates.add(i);
+  }
+  const visible = Array.from(candidates).sort((a,b) => a-b);
+  let last = 0;
+  for (const page of visible) {
+    if (page - last > 1) addDots();
+    addButton(String(page), page, false, page === radarCurrentPage);
+    last = page;
+  }
+  addButton('Вперёд →', radarCurrentPage + 1, radarCurrentPage === pages, false);
+  const counter = document.createElement('span');
+  counter.className = 'radar-page-counter';
+  counter.textContent = 'Страница ' + radarCurrentPage + ' из ' + pages;
+  nav.appendChild(counter);
+}
+
+
+function radarApplyFilters(resetLimit) {
+
+  if (resetLimit === true) {
+    radarCurrentPage = 1;
+  }
+
+  const box =
+    document.getElementById(
+      "tenders"
+    );
+
+  const note =
+    document.getElementById(
+      "tenderListNote"
+    );
+
+  if (!box || !note) {
+    return;
+  }
+
+  radarUpdateWorkQueueCounts();
+
+  const search =
+    (
+      document
+        .getElementById(
+          "radarSearch"
+        )
+        ?.value || ""
+    )
+      .trim()
+      .toLowerCase();
+
+  const source =
+    document
+      .getElementById(
+        "radarSource"
+      )
+      ?.value || "all";
+
+  const amountMin =
+    Number(
+      document
+        .getElementById(
+          "radarAmountMin"
+        )
+        ?.value || 0
+    );
+
+  const sort =
+    document
+      .getElementById(
+        "radarSort"
+      )
+      ?.value || "deadline";
+
+  let items =
+    radarTenderItems.filter(
+      item => {
+
+        if (
+          source !== "all" &&
+          item.tender.source_code !== source
+        ) {
+          return false;
+        }
+
+        if (
+          amountMin > 0 &&
+          (
+            Number(
+              item.tender.amount
+            ) || 0
+          ) < amountMin
+        ) {
+          return false;
+        }
+
+        if (!radarMatchesPeriod(item)) {
+          return false;
+        }
+
+        if (!radarMatchesWorkFilter(item)) {
+          return false;
+        }
+
+        if (search) {
+
+          const publicLot =
+            (
+              item.tender.raw &&
+              item.tender.raw.lot_number
+            )
+              ? item.tender.raw.lot_number
+              : (
+                  item.tender.source_lot_id ||
+                  ""
+                );
+
+          const haystack = [
+            item.tender.title,
+            item.tender.customer_name,
+            publicLot,
+            item.tender.source_code,
+            item.keywords.join(" ")
+          ]
+            .filter(Boolean)
+            .join(" ")
+            .toLowerCase();
+
+          if (
+            haystack.indexOf(
+              search
+            ) === -1
+          ) {
+            return false;
+          }
+
+        }
+
+        return true;
+
+      }
+    );
+
+  items.sort(
+    (a, b) => {
+
+      if (sort === "amount_desc") {
+        return (
+          Number(
+            b.tender.amount
+          ) || 0
+        ) - (
+          Number(
+            a.tender.amount
+          ) || 0
+        );
+      }
+
+      if (sort === "newest") {
+        return (
+          b.matchedAtMs || 0
+        ) - (
+          a.matchedAtMs || 0
+        );
+      }
+
+      const aDeadline =
+        a.deadlineMs ||
+        Number.MAX_SAFE_INTEGER;
+
+      const bDeadline =
+        b.deadlineMs ||
+        Number.MAX_SAFE_INTEGER;
+
+      return (
+        aDeadline -
+        bDeadline
+      );
+
+    }
+  );
+
+  const pageCount = Math.max(1, Math.ceil(items.length / radarPageSize));
+  radarCurrentPage = Math.min(Math.max(1, radarCurrentPage), pageCount);
+  const pageStart = (radarCurrentPage - 1) * radarPageSize;
+  const shownCount = Math.min(radarPageSize, Math.max(0, items.length - pageStart));
+  box.innerHTML = "";
+
+  if (!items.length) {
+
+    const empty =
+      document.createElement(
+        "div"
+      );
+
+    empty.className =
+      "radar-empty";
+
+    empty.textContent =
+      "По выбранным фильтрам тендеров нет.";
+
+    box.appendChild(empty);
+
+  } else {
+
+    items.slice(pageStart, pageStart + radarPageSize).forEach(item => {
+      box.appendChild(radarBuildTenderCard(item));
+    });
+  }
+
+  radarRenderPagination(items.length);
+
+  const workFilterLabels = {
+    all: "",
+    favorite: " · очередь: Избранное",
+    interested: " · очередь: Интересен",
+    in_work: " · очередь: В работу",
+    viewed: " · очередь: Просмотрен",
+    rejected: " · очередь: Не подходит"
+  };
+
+  const periodLabels = {
+    all: "Все сроки",
+    today: "Срок подачи сегодня (время Казахстана)",
+    "3d": "Срок подачи в ближайшие 3 дня",
+    "7d": "Срок подачи в ближайшие 7 дней"
+  };
+
+  note.textContent =
+    "Фильтр: " + (periodLabels[radarPeriod] || "Все сроки") +
+    ". Найдено по фильтрам: " + items.length +
+    ". Показано: " + (items.length ? (pageStart + 1) : 0) + "–" + (pageStart + shownCount) +
+    " из " + items.length +
+    (workFilterLabels[radarWorkFilter] || "") +
+    ". Всего актуальных: " + radarTenderItems.length + "." +
+    (
+      radarExpiredHidden > 0
+        ? " Просроченные скрыты: " +
+          radarExpiredHidden +
+          "."
+        : ""
+    );
+
+}
+let currentTelegramCount = 0;
+let currentTelegramOptOut = false;
+let availableSources = [];
+
+
+function showError(text) {
+
+  document.getElementById("message").innerHTML =
+    '<div class="error">' +
+    text +
+    '</div>';
+
+}
+
+
+function showInfo(text) {
+
+  document.getElementById("message").innerHTML =
+    '<div class="info">' +
+    text +
+    '</div>';
+
+}
+
+
+function showSuccess(text) {
+
+  document.getElementById("message").innerHTML =
+    '<div class="success-message">' +
+    text +
+    '</div>';
+
+}
+
+
+function clearMessage() {
+
+  document.getElementById("message").innerHTML = "";
+
+}
+
+
+function tags(elementId, values) {
+
+  const el =
+    document.getElementById(elementId);
+
+  el.innerHTML = "";
+
+  (values || []).forEach(v => {
+
+    const span =
+      document.createElement("span");
+
+    span.className = "tag";
+
+    span.textContent = v;
+
+    el.appendChild(span);
+
+  });
+
+}
+
+
+function textToArray(text) {
+
+  return text
+    .split(",")
+    .map(x => x.trim())
+    .filter(x => x.length > 0);
+
+}
+
+
+function formatDate(value) {
+
+  if (!value) {
+    return "—";
+  }
+
+  const d = new Date(value);
+
+  return d.toLocaleDateString(
+    "ru-RU"
+  );
+
+}
+
+
+function formatDateTime(value) {
+
+  if (!value) {
+    return "—";
+  }
+
+  const d = new Date(value);
+
+  return d.toLocaleString(
+    "ru-RU",
+    {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit"
+    }
+  );
+
+}
+
+
+function formatGoszakupDateTime(value) {
+
+  if (!value) {
+    return "—";
+  }
+
+  const d = new Date(value);
+
+  if (Number.isNaN(d.getTime())) {
+    return "—";
+  }
+
+  // Коррекция отображения Госзакуп по сверке с официальным порталом:
+  // сохранённый expires_at опережает срок на портале на один час.
+  // Показываем исходный срок портала (UTC+5), без лишнего часа.
+  const kz =
+    new Date(
+      d.getTime() +
+      5 * 60 * 60 * 1000
+    );
+
+  const pad =
+    n => String(n).padStart(2, "0");
+
+  return (
+    pad(kz.getUTCDate()) + "." +
+    pad(kz.getUTCMonth() + 1) + "." +
+    kz.getUTCFullYear() + ", " +
+    pad(kz.getUTCHours()) + ":" +
+    pad(kz.getUTCMinutes())
+  );
+
+}
+
+
+function formatMoney(value, currency) {
+
+  if (value === null || value === undefined || value === "") {
+    return "—";
+  }
+
+  const n = Number(value);
+
+  if (Number.isNaN(n)) {
+    return String(value);
+  }
+
+  return new Intl.NumberFormat(
+    "ru-RU",
+    {
+      maximumFractionDigits: 2
+    }
+  ).format(n) +
+  " " +
+  (currency || "KZT");
+
+}
+
+
+function normalizeMatchedKeywords(value) {
+
+  if (Array.isArray(value)) {
+    return value;
+  }
+
+  if (!value) {
+    return [];
+  }
+
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value);
+      if (Array.isArray(parsed)) {
+        return parsed;
+      }
+    } catch (_) {}
+
+    return value
+      .split(",")
+      .map(x => x.trim())
+      .filter(Boolean);
+  }
+
+  return [String(value)];
+}
+
+
+function accessIsActive() {
+
+  if (!currentClient) {
+    return false;
+  }
+
+  if (
+    currentClient.payment_status &&
+    currentClient.payment_status !== "active"
+  ) {
+    return false;
+  }
+
+  const isRealCommercialClient =
+    String(currentClient.code || "").startsWith("client-");
+
+  if (isRealCommercialClient) {
+    if (currentClient.payment_provider !== "gumroad") {
+      return false;
+    }
+
+    if (!currentClient.license_verified_at || !currentClient.expires_at) {
+      return false;
+    }
+  }
+
+  if (
+    currentClient.expires_at &&
+    new Date(currentClient.expires_at) < new Date()
+  ) {
+    return false;
+  }
+
+  return true;
+
+}
+
+
+function setOnboardingStep(stepNumber, state, text) {
+  const step =
+    document.getElementById(
+      "onboardingStep" + stepNumber
+    );
+
+  const status =
+    document.getElementById(
+      "onboardingStatus" + stepNumber
+    );
+
+  if (!step || !status) {
+    return;
+  }
+
+  step.className =
+    "onboarding-step " + state;
+
+  status.className =
+    "onboarding-status " + state;
+
+  status.textContent = text;
+}
+
+
+function updateOnboarding(profileCount, telegramCount, telegramOptOut = false) {
+
+  const hasProfile =
+    Number(profileCount || 0) > 0;
+
+  const hasTelegram =
+    Number(telegramCount || 0) > 0;
+
+  const telegramDecisionMade =
+    hasTelegram || Boolean(telegramOptOut);
+
+  if (hasProfile) {
+    setOnboardingStep(1, "done", "Готово ✓");
+  } else {
+    setOnboardingStep(1, "current", "Сделайте сейчас");
+  }
+
+  if (hasTelegram) {
+    setOnboardingStep(2, "done", "Подключён ✓");
+  } else if (telegramOptOut) {
+    setOnboardingStep(2, "done", "Не нужен ✓");
+  } else if (hasProfile) {
+    setOnboardingStep(2, "current", "По желанию");
+  } else {
+    setOnboardingStep(2, "waiting", "После шага 1");
+  }
+
+  if (hasProfile) {
+    setOnboardingStep(
+      3,
+      telegramDecisionMade ? "done" : "current",
+      telegramDecisionMade
+        ? "Система настроена ✓"
+        : "Поиск уже работает"
+    );
+  } else {
+    setOnboardingStep(3, "waiting", "После создания профиля");
+  }
+}
+
+
+function sourceName(code) {
+  const item = availableSources.find(x => x.code === code);
+  return item ? item.name : code;
+}
+
+function renderProfileSources(values) {
+  tags(
+    "profileSources",
+    (values || []).map(sourceName)
+  );
+}
+
+function selectedSourceCodes(containerId) {
+  return Array
+    .from(
+      document.querySelectorAll(
+        "#" + containerId + ' input[type="checkbox"]:checked'
+      )
+    )
+    .map(x => x.value);
+}
+
+function updateSourceCounter(containerId, counterId) {
+  const count = selectedSourceCodes(containerId).length;
+  const limit =
+    currentClient &&
+    currentClient.source_limit !== null &&
+    currentClient.source_limit !== undefined
+      ? Number(currentClient.source_limit)
+      : null;
+
+  document
+    .getElementById(counterId)
+    .textContent =
+    "Выбрано: " +
+    count +
+    " / " +
+    (limit === null ? "—" : limit);
+}
+
+function renderSourceOptions(containerId, counterId, selectedValues) {
+  const box = document.getElementById(containerId);
+  if (!box) return;
+
+  const selected = new Set(selectedValues || []);
+  box.innerHTML = "";
+
+  availableSources.forEach(src => {
+    const label = document.createElement("label");
+    label.className = "source-option";
+
+    const input = document.createElement("input");
+    input.type = "checkbox";
+    input.value = src.code;
+    input.checked = selected.has(src.code);
+
+    input.addEventListener("change", () => {
+      const limit =
+        currentClient &&
+        currentClient.source_limit !== null &&
+        currentClient.source_limit !== undefined
+          ? Number(currentClient.source_limit)
+          : null;
+
+      const chosen = selectedSourceCodes(containerId);
+
+      if (limit !== null && chosen.length > limit) {
+        input.checked = false;
+        showError(
+          "По вашему тарифу можно выбрать не более " +
+          limit +
+          " источников."
+        );
+      } else {
+        clearMessage();
+      }
+
+      updateSourceCounter(containerId, counterId);
+    });
+
+    const span = document.createElement("span");
+    span.textContent = src.name;
+
+    label.appendChild(input);
+    label.appendChild(span);
+    box.appendChild(label);
+  });
+
+  updateSourceCounter(containerId, counterId);
+}
+
+function validateSelectedSources(containerId) {
+  const values = selectedSourceCodes(containerId);
+  const limit =
+    currentClient &&
+    currentClient.source_limit !== null &&
+    currentClient.source_limit !== undefined
+      ? Number(currentClient.source_limit)
+      : null;
+
+  if (!values.length) {
+    showError("Выберите хотя бы один источник.");
+    return null;
+  }
+
+  if (limit !== null && values.length > limit) {
+    showError(
+      "По вашему тарифу можно выбрать не более " +
+      limit +
+      " источников."
+    );
+    return null;
+  }
+
+  return values;
+}
+
+
+function showRegistration() {
+
+  clearMessage();
+
+  document
+    .getElementById("loginBlock")
+    .style.display = "none";
+
+  document
+    .getElementById("registrationBlock")
+    .style.display = "block";
+
+}
+
+
+function cancelRegistration() {
+
+  clearMessage();
+
+  document
+    .getElementById("registrationBlock")
+    .style.display = "none";
+
+  document
+    .getElementById("loginBlock")
+    .style.display = "block";
+
+}
+
+
+async function registerUser() {
+
+  clearMessage();
+
+  const company =
+    document
+      .getElementById("registerCompany")
+      .value
+      .trim();
+
+  const email =
+    document
+      .getElementById("registerEmail")
+      .value
+      .trim();
+
+  const password =
+    document
+      .getElementById("registerPassword")
+      .value;
+
+  const repeat =
+    document
+      .getElementById("registerPasswordRepeat")
+      .value;
+
+  if (!company || !email || !password || !repeat) {
+    showError("Заполните все поля регистрации.");
+    return;
+  }
+
+  if (password.length < 6) {
+    showError("Пароль должен содержать не менее 6 символов.");
+    return;
+  }
+
+  if (password !== repeat) {
+    showError("Пароли не совпадают.");
+    return;
+  }
+
+  showInfo("Создаём аккаунт...");
+
+  const { data, error } =
+    await sb.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          company_name: company
+        },
+        emailRedirectTo:
+          window.location.origin +
+          window.location.pathname
+      }
+    });
+
+  if (error) {
+    showError(
+      "Не удалось зарегистрироваться: " +
+      error.message
+    );
+    return;
+  }
+
+  document
+    .getElementById("registrationBlock")
+    .style.display = "none";
+
+  document
+    .getElementById("loginBlock")
+    .style.display = "block";
+
+  document
+    .getElementById("email")
+    .value = email;
+
+  document
+    .getElementById("password")
+    .value = "";
+
+  if (data.session) {
+    showSuccess(
+      "Регистрация прошла успешно. Аккаунт создан. Следующий этап — автоматическое создание карточки клиента."
+    );
+  } else {
+    showSuccess(
+      "Регистрация принята. Проверьте email и подтвердите адрес. После подтверждения вернитесь на страницу входа."
+    );
+  }
+
+}
+
+
+function showPasswordRecovery() {
+
+  clearMessage();
+
+  const currentEmail =
+    document
+      .getElementById("email")
+      .value
+      .trim();
+
+  document
+    .getElementById("recoveryEmail")
+    .value = currentEmail;
+
+  document
+    .getElementById("loginBlock")
+    .style.display = "none";
+
+  document
+    .getElementById("registrationBlock")
+    .style.display = "none";
+
+  document
+    .getElementById("recoveryRequestBlock")
+    .style.display = "block";
+
+}
+
+
+function cancelPasswordRecovery() {
+
+  clearMessage();
+
+  document
+    .getElementById("recoveryRequestBlock")
+    .style.display = "none";
+
+  document
+    .getElementById("loginBlock")
+    .style.display = "block";
+
+}
+
+
+async function sendPasswordRecovery() {
+
+  clearMessage();
+
+  const email =
+    document
+      .getElementById("recoveryEmail")
+      .value
+      .trim();
+
+  if (!email) {
+    showError("Введите email.");
+    return;
+  }
+
+  showInfo("Отправляем письмо для восстановления пароля...");
+
+  const redirectTo =
+    window.location.origin +
+    window.location.pathname;
+
+  const { error } =
+    await sb.auth.resetPasswordForEmail(
+      email,
+      { redirectTo }
+    );
+
+  if (error) {
+    showError(
+      "Не удалось отправить письмо: " +
+      error.message
+    );
+    return;
+  }
+
+  showSuccess(
+    "Письмо отправлено. Откройте ссылку из письма и задайте новый пароль."
+  );
+
+}
+
+
+async function saveNewPassword() {
+
+  clearMessage();
+
+  const password =
+    document
+      .getElementById("newPassword")
+      .value;
+
+  const repeat =
+    document
+      .getElementById("newPasswordRepeat")
+      .value;
+
+  if (!password || !repeat) {
+    showError("Введите новый пароль дважды.");
+    return;
+  }
+
+  if (password.length < 6) {
+    showError("Пароль должен содержать не менее 6 символов.");
+    return;
+  }
+
+  if (password !== repeat) {
+    showError("Пароли не совпадают.");
+    return;
+  }
+
+  showInfo("Сохраняем новый пароль...");
+
+  const { error } =
+    await sb.auth.updateUser({
+      password
+    });
+
+  if (error) {
+    showError(
+      "Не удалось изменить пароль: " +
+      error.message
+    );
+    return;
+  }
+
+  document
+    .getElementById("newPasswordBlock")
+    .style.display = "none";
+
+  document
+    .getElementById("loginBlock")
+    .style.display = "block";
+
+  document
+    .getElementById("password")
+    .value = "";
+
+  showSuccess(
+    "Пароль успешно изменён. Теперь войдите с новым паролем."
+  );
+
+  await sb.auth.signOut();
+
+}
+
+
+sb.auth.onAuthStateChange((event) => {
+
+  if (event === "PASSWORD_RECOVERY") {
+
+    document
+      .getElementById("loginBlock")
+      .style.display = "none";
+
+    document
+      .getElementById("recoveryRequestBlock")
+      .style.display = "none";
+
+    document
+      .getElementById("registrationBlock")
+      .style.display = "none";
+
+    document
+      .getElementById("cabinet")
+      .style.display = "none";
+
+    document
+      .getElementById("newPasswordBlock")
+      .style.display = "block";
+
+    showInfo(
+      "Ссылка подтверждена. Задайте новый пароль."
+    );
+
+  }
+
+});
+
+
+async function login() {
+
+  clearMessage();
+
+  const email =
+    document
+      .getElementById("email")
+      .value
+      .trim();
+
+  const password =
+    document
+      .getElementById("password")
+      .value;
+
+  if (!email || !password) {
+
+    showError(
+      "Введите email и пароль."
+    );
+
+    return;
+  }
+
+  if (
+    gumroadLicenseEmail &&
+    normalizeEmail(email) !== gumroadLicenseEmail
+  ) {
+    showError(
+      "Email входа должен совпадать с email покупателя Gumroad."
+    );
+    return;
+  }
+
+
+  showInfo(
+    "Выполняется вход..."
+  );
+
+
+  const {
+    data,
+    error
+  } =
+    await sb.auth.signInWithPassword({
+      email,
+      password
+    });
+
+
+  if (error) {
+
+    showError(
+      "Ошибка входа: " +
+      error.message
+    );
+
+    return;
+  }
+
+
+  clearMessage();
+
+  try {
+    await bindPendingLicenseToUser(data.user);
+  } catch (bindError) {
+    console.error(bindError);
+    showError(
+      "Вход выполнен, но не удалось завершить привязку лицензии: " +
+      (bindError.message || bindError)
+    );
+    return;
+  }
+
+  await openCabinet(
+    data.user
+  );
+
+}
+
+
+async function logout() {
+
+  await sb.auth.signOut();
+
+  currentClientId = null;
+  currentProfileId = null;
+  currentProfile = null;
+  currentClient = null;
+  currentTelegramCount = 0;
+  availableSources = [];
+
+  document
+    .getElementById("cabinet")
+    .style.display =
+    "none";
+
+  document
+    .getElementById("password")
+    .value =
+    "";
+
+  const emailInput =
+    document.getElementById("email");
+
+  if (emailInput) {
+    emailInput.value = "";
+    emailInput.readOnly = false;
+  }
+
+  clearPendingLicenseMeta();
+
+  showLoginHome(
+    "Вы вышли из кабинета. Для следующего входа достаточно email и пароля."
+  );
+
+}
+
+
+
+async function callTelegramBind(payload) {
+
+  const {
+    data: { session },
+    error: sessionError
+  } = await sb.auth.getSession();
+
+  if (sessionError || !session?.access_token) {
+    throw new Error("Сессия пользователя недействительна. Войдите снова.");
+  }
+
+  const response = await fetch(
+    TELEGRAM_BIND_URL,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + session.access_token
+      },
+      body: JSON.stringify(payload || {})
+    }
+  );
+
+  let result = {};
+
+  try {
+    result = await response.json();
+  } catch (_) {
+    result = {};
+  }
+
+  if (!response.ok || !result.success) {
+    throw new Error(
+      result.error ||
+      result.message ||
+      "Не удалось сохранить настройки Telegram."
+    );
+  }
+
+  return result;
+}
+
+
+function showTelegramConnect() {
+
+  clearMessage();
+
+  if (!currentClient) {
+    showError("Не удалось определить клиента.");
+    return;
+  }
+
+  if (!accessIsActive()) {
+    showError(
+      "Подключение Telegram недоступно: тариф не активен или срок действия истёк."
+    );
+    return;
+  }
+
+  const limit = currentClient.telegram_limit;
+
+  if (
+    limit !== null &&
+    limit !== undefined &&
+    currentTelegramCount >= Number(limit)
+  ) {
+    showError("Достигнут лимит Telegram для вашего тарифа.");
+    return;
+  }
+
+  document
+    .getElementById("telegramConnectForm")
+    .style.display = "block";
+
+  document
+    .getElementById("connectTelegramButton")
+    .style.display = "none";
+
+  document
+    .getElementById("skipTelegramButton")
+    .style.display = "none";
+}
+
+
+function cancelTelegramConnect() {
+
+  document
+    .getElementById("telegramConnectForm")
+    .style.display = "none";
+
+  if (currentTelegramCount === 0) {
+    document
+      .getElementById("connectTelegramButton")
+      .style.display = "inline-block";
+
+    document
+      .getElementById("skipTelegramButton")
+      .style.display = currentTelegramOptOut
+        ? "none"
+        : "inline-block";
+  }
+}
+
+
+async function onTelegramAuth(user) {
+
+  clearMessage();
+
+  if (!user || !user.id || !user.hash) {
+    showError("Telegram не вернул данные авторизации.");
+    return;
+  }
+
+  try {
+    showInfo("Проверяем Telegram и сохраняем подключение...");
+
+    const bound = await callTelegramBind({
+      action: "connect",
+      telegram: user
+    });
+
+    currentTelegramCount = 1;
+    currentTelegramOptOut = false;
+    currentClient.telegram_opt_out = false;
+
+    const label = bound.label || "Telegram";
+
+    document
+      .getElementById("telegram")
+      .textContent = label;
+
+    document
+      .getElementById("telegramStatus")
+      .textContent = "ON";
+
+    document
+      .getElementById("planTelegram")
+      .textContent =
+      currentTelegramCount +
+      " / " +
+      (currentClient.telegram_limit ?? "—");
+
+    document
+      .getElementById("telegramConnectionState")
+      .textContent = label + " — подключён";
+
+    document
+      .getElementById("telegramConnectionState")
+      .className = "telegram-state on";
+
+    document
+      .getElementById("telegramConnectForm")
+      .style.display = "none";
+
+    document
+      .getElementById("connectTelegramButton")
+      .style.display = "none";
+
+    document
+      .getElementById("skipTelegramButton")
+      .style.display = "none";
+
+    updateOnboarding(
+      currentProfile ? 1 : 0,
+      currentTelegramCount,
+      currentTelegramOptOut
+    );
+
+    showSuccess(
+      "Telegram подключён автоматически. Проверочное сообщение отправлено в выбранный Telegram-аккаунт."
+    );
+
+  } catch (error) {
+    showError(
+      "Не удалось подключить Telegram: " +
+      (error?.message || String(error))
+    );
+  }
+}
+
+
+async function skipTelegram() {
+
+  clearMessage();
+
+  if (!currentClientId || !currentClient) {
+    showError("Не удалось определить клиента.");
+    return;
+  }
+
+  try {
+    showInfo("Сохраняем выбор: уведомления Telegram не нужны...");
+
+    await callTelegramBind({ action: "skip" });
+
+    currentTelegramCount = 0;
+    currentTelegramOptOut = true;
+    currentClient.telegram_opt_out = true;
+
+    document
+      .getElementById("telegram")
+      .textContent = "Не требуется";
+
+    document
+      .getElementById("telegramStatus")
+      .textContent = "OFF";
+
+    document
+      .getElementById("planTelegram")
+      .textContent =
+      "0 / " +
+      (currentClient.telegram_limit ?? "—");
+
+    document
+      .getElementById("telegramConnectionState")
+      .textContent = "Уведомления Telegram отключены по вашему выбору";
+
+    document
+      .getElementById("telegramConnectionState")
+      .className = "telegram-state";
+
+    document
+      .getElementById("telegramConnectForm")
+      .style.display = "none";
+
+    document
+      .getElementById("connectTelegramButton")
+      .style.display = "inline-block";
+
+    document
+      .getElementById("skipTelegramButton")
+      .style.display = "none";
+
+    updateOnboarding(
+      currentProfile ? 1 : 0,
+      currentTelegramCount,
+      currentTelegramOptOut
+    );
+
+    showSuccess(
+      "Хорошо. Telegram не подключаем. Радар продолжит работать, а найденные тендеры останутся доступны в кабинете. Подключить Telegram можно позже."
+    );
+
+  } catch (error) {
+    showError(
+      "Не удалось сохранить выбор Telegram: " +
+      (error?.message || String(error))
+    );
+  }
+}
+
+
+function showCreateProfile() {
+
+  clearMessage();
+
+  if (!currentClient) {
+    showError("Не удалось определить клиента.");
+    return;
+  }
+
+  if (!accessIsActive()) {
+    showError(
+      "Создание профиля недоступно: тариф не активен или срок действия истёк."
+    );
+    return;
+  }
+
+  const limit = currentClient.profile_limit;
+
+  if (
+    limit !== null &&
+    limit !== undefined &&
+    Number(limit) <= 0
+  ) {
+    showError("Ваш тариф не позволяет создавать профили поиска.");
+    return;
+  }
+
+  if (currentProfile) {
+    showError("Профиль поиска уже создан.");
+    return;
+  }
+
+  renderSourceOptions(
+    "createSourceOptions",
+    "createSourceCounter",
+    ["goszakup", "samruk"].filter(
+      code => availableSources.some(x => x.code === code)
+    ).slice(
+      0,
+      currentClient.source_limit ?? 999
+    )
+  );
+
+  document
+    .getElementById("profileCreate")
+    .style.display = "block";
+
+  document
+    .getElementById("createProfileButton")
+    .style.display = "none";
+
+  document
+    .getElementById("emptyProfileBox")
+    .style.display = "none";
+
+}
+
+
+function cancelCreateProfile() {
+
+  document
+    .getElementById("profileCreate")
+    .style.display = "none";
+
+  if (!currentProfile) {
+    document
+      .getElementById("createProfileButton")
+      .style.display = "inline-block";
+
+    document
+      .getElementById("emptyProfileBox")
+      .style.display = "block";
+  }
+
+}
+
+
+async function createProfile() {
+
+  clearMessage();
+
+  if (!currentClientId || !currentClient) {
+    showError("Не удалось определить клиента.");
+    return;
+  }
+
+  if (!accessIsActive()) {
+    showError(
+      "Создание профиля недоступно: тариф не активен или срок действия истёк."
+    );
+    return;
+  }
+
+  const limit = currentClient.profile_limit;
+
+  if (
+    limit !== null &&
+    limit !== undefined &&
+    Number(limit) <= 0
+  ) {
+    showError("Ваш тариф не позволяет создавать профили поиска.");
+    return;
+  }
+
+  const name =
+    document
+      .getElementById("createProfileName")
+      .value
+      .trim();
+
+  const includeKeywords =
+    textToArray(
+      document
+        .getElementById("createIncludeKeywords")
+        .value
+    );
+
+  const excludeKeywords =
+    textToArray(
+      document
+        .getElementById("createExcludeKeywords")
+        .value
+    );
+
+  const sources =
+    validateSelectedSources(
+      "createSourceOptions"
+    );
+
+  if (!sources) {
+    return;
+  }
+
+  if (!name) {
+    showError("Введите название профиля.");
+    return;
+  }
+
+  if (!includeKeywords.length) {
+    showError("Добавьте хотя бы одно ключевое слово.");
+    return;
+  }
+
+  showInfo("Создаём профиль поиска...");
+
+  const {
+    data: existingProfiles,
+    error: countError
+  } =
+    await db
+      .from("profiles")
+      .select("id")
+      .eq("client_id", currentClientId);
+
+  if (countError) {
+    showError(
+      "Не удалось проверить лимит профилей: " +
+      countError.message
+    );
+    return;
+  }
+
+  if (
+    limit !== null &&
+    limit !== undefined &&
+    existingProfiles.length >= Number(limit)
+  ) {
+    showError("Достигнут лимит профилей для вашего тарифа.");
+    return;
+  }
+
+  const {
+    data,
+    error
+  } =
+    await db
+      .from("profiles")
+      .insert({
+        client_id: currentClientId,
+        name: name,
+        include_keywords: includeKeywords,
+        exclude_keywords: excludeKeywords,
+        sources: sources
+      })
+      .select()
+      .single();
+
+  if (error) {
+    showError(
+      "Не удалось создать профиль: " +
+      error.message
+    );
+    return;
+  }
+
+  currentProfile = data;
+  currentProfileId = data.id;
+
+  document
+    .getElementById("profileName")
+    .textContent =
+    data.name || "—";
+
+  tags(
+    "includeKeywords",
+    data.include_keywords
+  );
+
+  tags(
+    "excludeKeywords",
+    data.exclude_keywords
+  );
+
+  renderProfileSources(
+    data.sources || []
+  );
+
+  document
+    .getElementById("profileCreate")
+    .style.display = "none";
+
+  document
+    .getElementById("createProfileButton")
+    .style.display = "none";
+
+  document
+    .getElementById("emptyProfileBox")
+    .style.display = "none";
+
+  document
+    .getElementById("editProfileButton")
+    .style.display = "inline-block";
+
+  document
+    .getElementById("profileCount")
+    .textContent = existingProfiles.length + 1;
+
+  document
+    .getElementById("planProfiles")
+    .textContent =
+    (existingProfiles.length + 1) +
+    " / " +
+    (
+      currentClient.profile_limit ??
+      "—"
+    );
+
+  document
+    .getElementById("planSources")
+    .textContent =
+    sources.length +
+    " / " +
+    (
+      currentClient.source_limit ??
+      "—"
+    );
+
+  showSuccess(
+    "Профиль поиска создан. Теперь его можно редактировать."
+  );
+
+}
+
+
+function toggleProfileEdit() {
+
+  if (!currentProfile) {
+
+    showError(
+      "Профиль поиска не найден."
+    );
+
+    return;
+  }
+
+  if (!accessIsActive()) {
+
+    showError(
+      "Редактирование недоступно: тариф не активен или срок действия истёк."
+    );
+
+    return;
+  }
+
+
+  document
+    .getElementById("editProfileName")
+    .value =
+    currentProfile.name || "";
+
+
+  document
+    .getElementById("editIncludeKeywords")
+    .value =
+    (currentProfile.include_keywords || [])
+      .join(", ");
+
+
+  document
+    .getElementById("editExcludeKeywords")
+    .value =
+    (currentProfile.exclude_keywords || [])
+      .join(", ");
+
+
+  renderSourceOptions(
+    "editSourceOptions",
+    "editSourceCounter",
+    currentProfile.sources || []
+  );
+
+  document
+    .getElementById("profileEdit")
+    .style.display =
+    "block";
+
+
+  document
+    .getElementById("editProfileButton")
+    .style.display =
+    "none";
+
+}
+
+
+function cancelProfileEdit() {
+
+  document
+    .getElementById("profileEdit")
+    .style.display =
+    "none";
+
+  document
+    .getElementById("editProfileButton")
+    .style.display =
+    "inline-block";
+
+}
+
+
+async function saveProfile() {
+
+  clearMessage();
+
+  if (!currentProfileId) {
+
+    showError(
+      "Не удалось определить профиль."
+    );
+
+    return;
+  }
+
+
+  if (!accessIsActive()) {
+
+    showError(
+      "Сохранение недоступно: тариф не активен или срок действия истёк."
+    );
+
+    return;
+  }
+
+
+  const name =
+    document
+      .getElementById("editProfileName")
+      .value
+      .trim();
+
+
+  const includeKeywords =
+    textToArray(
+      document
+        .getElementById("editIncludeKeywords")
+        .value
+    );
+
+
+  const excludeKeywords =
+    textToArray(
+      document
+        .getElementById("editExcludeKeywords")
+        .value
+    );
+
+  const sources =
+    validateSelectedSources(
+      "editSourceOptions"
+    );
+
+  if (!sources) {
+    return;
+  }
+
+
+  if (!name) {
+
+    showError(
+      "Введите название профиля."
+    );
+
+    return;
+  }
+
+
+  if (!includeKeywords.length) {
+
+    showError(
+      "Добавьте хотя бы одно ключевое слово."
+    );
+
+    return;
+  }
+
+
+  showInfo(
+    "Сохраняем профиль..."
+  );
+
+
+  const {
+    data,
+    error
+  } =
+    await db
+      .from("profiles")
+      .update({
+        name: name,
+        include_keywords: includeKeywords,
+        exclude_keywords: excludeKeywords,
+        sources: sources
+      })
+      .eq(
+        "id",
+        currentProfileId
+      )
+      .select()
+      .single();
+
+
+  if (error) {
+
+    showError(
+      "Ошибка сохранения: " +
+      error.message
+    );
+
+    return;
+  }
+
+
+  currentProfile = data;
+
+
+  document
+    .getElementById("profileName")
+    .textContent =
+    data.name || "—";
+
+
+  tags(
+    "includeKeywords",
+    data.include_keywords
+  );
+
+
+  tags(
+    "excludeKeywords",
+    data.exclude_keywords
+  );
+
+  renderProfileSources(
+    data.sources || []
+  );
+
+  document
+    .getElementById("planSources")
+    .textContent =
+    (data.sources || []).length +
+    " / " +
+    (
+      currentClient.source_limit ??
+      "—"
+    );
+
+
+  cancelProfileEdit();
+
+
+  showSuccess(
+    "Профиль поиска сохранён."
+  );
+
+}
+
+
+
+
+// ===== Protocol 20.2: client feedback =====
+function setFeedbackLocalMessage(text, isError = false) {
+  const el = document.getElementById("feedbackLocalMessage");
+  if (!el) return;
+
+  el.textContent = text || "";
+  el.className =
+    "feedback-local-message" +
+    (text ? (isError ? " err" : " ok") : "");
+}
+
+
+function toggleFeedbackForm() {
+  const form = document.getElementById("feedbackForm");
+  const button = document.getElementById("feedbackToggleBtn");
+  if (!form || !button) return;
+
+  const willOpen = form.style.display !== "block";
+  form.style.display = willOpen ? "block" : "none";
+  button.textContent = willOpen ? "Закрыть" : "Сообщить";
+
+  if (willOpen) {
+    setFeedbackLocalMessage("");
+    const text = document.getElementById("feedbackText");
+    if (text) text.focus();
+  }
+}
+
+
+async function submitFeedback() {
+  const kindEl = document.getElementById("feedbackKind");
+  const textEl = document.getElementById("feedbackText");
+  const button = document.getElementById("feedbackSendBtn");
+
+  if (!currentClientId) {
+    setFeedbackLocalMessage(
+      "Не удалось определить клиента. Обновите страницу и войдите снова.",
+      true
+    );
+    return;
+  }
+
+  const kind = kindEl ? kindEl.value : "error";
+  const message = textEl ? textEl.value.trim() : "";
+
+  if (message.length < 3) {
+    setFeedbackLocalMessage(
+      "Напишите сообщение длиной не менее 3 символов.",
+      true
+    );
+    if (textEl) textEl.focus();
+    return;
+  }
+
+  if (button) {
+    button.disabled = true;
+    button.textContent = "Отправляем...";
+  }
+
+  setFeedbackLocalMessage("");
+
+  try {
+    const { error } = await db
+      .from("feedback_messages")
+      .insert({
+        client_id: currentClientId,
+        kind: kind,
+        message: message
+      });
+
+    if (error) {
+      throw error;
+    }
+
+    if (textEl) textEl.value = "";
+    setFeedbackLocalMessage(
+      "Спасибо. Сообщение отправлено."
+    );
+
+  } catch (error) {
+    console.error(error);
+    setFeedbackLocalMessage(
+      "Не удалось отправить сообщение. Попробуйте ещё раз позже.",
+      true
+    );
+
+  } finally {
+    if (button) {
+      button.disabled = false;
+      button.textContent = "Отправить";
+    }
+  }
+}
+
+
+async function openCabinet(user) {
+
+  try {
+
+    showInfo(
+      "Загружаем кабинет..."
+    );
+
+
+    const {
+      data: link,
+      error: linkError
+    } =
+      await db
+        .from("client_users")
+        .select(
+          "client_id, full_name, email"
+        )
+        .eq(
+          "auth_user_id",
+          user.id
+        )
+        .eq(
+          "active",
+          true
+        )
+        .single();
+
+
+    if (linkError) {
+      throw linkError;
+    }
+
+
+    currentClientId =
+      link.client_id;
+
+
+    document
+      .getElementById("userEmail")
+      .textContent =
+      user.email ||
+      link.email ||
+      "—";
+
+
+    const {
+      data: client,
+      error: clientError
+    } =
+      await db
+        .from("clients")
+        .select("*")
+        .eq(
+          "id",
+          currentClientId
+        )
+        .single();
+
+
+    if (clientError) {
+      throw clientError;
+    }
+
+
+    currentClient = client;
+    currentTelegramOptOut = Boolean(client.telegram_opt_out);
+
+    if (!accessIsActive()) {
+      const expired =
+        client.expires_at &&
+        new Date(client.expires_at) < new Date();
+
+      document.getElementById("cabinet").style.display = "none";
+
+      await sb.auth.signOut();
+
+      showLoginHome();
+
+      showError(
+        expired
+          ? "Срок оплаченного доступа истёк. Для продления активируйте новую лицензию Gumroad."
+          : "Лицензия не привязана или доступ не активен. Выполните первичную активацию Gumroad."
+      );
+
+      return;
+    }
+
+    const {
+      data: sourceRows,
+      error: sourceError
+    } =
+      await db
+        .from("sources")
+        .select("code, name, sort_order")
+        .eq("active", true)
+        .order("sort_order");
+
+    if (sourceError) {
+      throw sourceError;
+    }
+
+    availableSources = sourceRows || [];
+
+
+    document
+      .getElementById("clientName")
+      .textContent =
+      client.name ||
+      link.full_name ||
+      "Клиент";
+
+
+    document
+      .getElementById("tariff")
+      .textContent =
+      client.tariff ||
+      "—";
+
+
+    document
+      .getElementById("clientStatus")
+      .innerHTML =
+      '<span class="status">' +
+      (client.status || "—") +
+      '</span>';
+
+
+    document
+      .getElementById("planTariff")
+      .textContent =
+      client.tariff || "—";
+
+
+    document
+      .getElementById("planExpires")
+      .textContent =
+      formatDate(
+        client.expires_at
+      );
+
+
+    const paymentEl =
+      document.getElementById(
+        "planPayment"
+      );
+
+
+    paymentEl.textContent =
+      client.payment_status ||
+      "—";
+
+
+    paymentEl.className =
+      "plan-value " +
+      (
+        accessIsActive()
+          ? "status"
+          : "status-bad"
+      );
+
+
+    const {
+      data: profiles,
+      error: profileError
+    } =
+      await db
+        .from("profiles")
+        .select("*")
+        .eq(
+          "client_id",
+          currentClientId
+        );
+
+
+    if (profileError) {
+      throw profileError;
+    }
+
+
+    document
+      .getElementById("profileCount")
+      .textContent =
+      profiles.length;
+
+
+    document
+      .getElementById("planProfiles")
+      .textContent =
+      profiles.length +
+      " / " +
+      (
+        client.profile_limit ??
+        "—"
+      );
+
+
+    if (profiles.length) {
+
+      currentProfile =
+        profiles[0];
+
+      currentProfileId =
+        currentProfile.id;
+
+
+      document
+        .getElementById("profileName")
+        .textContent =
+        currentProfile.name ||
+        "—";
+
+
+      tags(
+        "includeKeywords",
+        currentProfile.include_keywords
+      );
+
+
+      tags(
+        "excludeKeywords",
+        currentProfile.exclude_keywords
+      );
+
+      renderProfileSources(
+        currentProfile.sources || []
+      );
+
+      document
+        .getElementById("planSources")
+        .textContent =
+        (currentProfile.sources || []).length +
+        " / " +
+        (
+          client.source_limit ??
+          "—"
+        );
+
+
+      document
+        .getElementById("editProfileButton")
+        .style.display =
+        "inline-block";
+
+      document
+        .getElementById("createProfileButton")
+        .style.display =
+        "none";
+
+      document
+        .getElementById("emptyProfileBox")
+        .style.display =
+        "none";
+
+      document
+        .getElementById("profileCreate")
+        .style.display =
+        "none";
+
+    } else {
+
+      currentProfile = null;
+      currentProfileId = null;
+
+
+      document
+        .getElementById("profileName")
+        .textContent =
+        "—";
+
+
+      tags(
+        "includeKeywords",
+        []
+      );
+
+
+      tags(
+        "excludeKeywords",
+        []
+      );
+
+      renderProfileSources([]);
+
+      document
+        .getElementById("planSources")
+        .textContent =
+        "0 / " +
+        (
+          client.source_limit ??
+          "—"
+        );
+
+
+      document
+        .getElementById("editProfileButton")
+        .style.display =
+        "none";
+
+      document
+        .getElementById("createProfileButton")
+        .style.display =
+        "inline-block";
+
+      document
+        .getElementById("emptyProfileBox")
+        .style.display =
+        "block";
+
+      document
+        .getElementById("profileCreate")
+        .style.display =
+        "none";
+
+    }
+
+
+    const {
+      data: telegrams,
+      error: telegramError
+    } =
+      await db
+        .from("telegram_destinations")
+        .select("*")
+        .eq(
+          "client_id",
+          currentClientId
+        )
+        .eq(
+          "active",
+          true
+        );
+
+
+    if (telegramError) {
+      throw telegramError;
+    }
+
+
+    currentTelegramCount =
+      telegrams.length;
+
+    document
+      .getElementById("planTelegram")
+      .textContent =
+      telegrams.length +
+      " / " +
+      (
+        client.telegram_limit ??
+        "—"
+      );
+
+
+    if (telegrams.length) {
+
+      document
+        .getElementById("telegram")
+        .textContent =
+        telegrams[0].label ||
+        "Подключён";
+
+
+      document
+        .getElementById("telegramStatus")
+        .textContent =
+        "ON";
+
+      document
+        .getElementById("telegramConnectionState")
+        .textContent =
+        (telegrams[0].label || "Telegram") +
+        " — подключён";
+
+      document
+        .getElementById("telegramConnectionState")
+        .className =
+        "telegram-state on";
+
+      document
+        .getElementById("connectTelegramButton")
+        .style.display =
+        "none";
+
+      document
+        .getElementById("telegramConnectForm")
+        .style.display =
+        "none";
+
+      document
+        .getElementById("skipTelegramButton")
+        .style.display =
+        "none";
+
+    } else {
+
+      document
+        .getElementById("telegram")
+        .textContent =
+        currentTelegramOptOut ? "Не требуется" : "Не подключён";
+
+
+      document
+        .getElementById("telegramStatus")
+        .textContent =
+        "OFF";
+
+      document
+        .getElementById("telegramConnectionState")
+        .textContent =
+        currentTelegramOptOut
+          ? "Уведомления Telegram отключены по вашему выбору"
+          : "Не подключён";
+
+      document
+        .getElementById("telegramConnectionState")
+        .className =
+        "telegram-state";
+
+      document
+        .getElementById("connectTelegramButton")
+        .style.display =
+        "inline-block";
+
+      document
+        .getElementById("skipTelegramButton")
+        .style.display =
+        currentTelegramOptOut ? "none" : "inline-block";
+
+      document
+        .getElementById("telegramConnectForm")
+        .style.display =
+        "none";
+
+    }
+
+    updateOnboarding(
+      profiles.length,
+      telegrams.length,
+      currentTelegramOptOut
+    );
+
+
+    const {
+      data: matches,
+      error: matchesError
+    } =
+      await db
+        .from("client_tender_matches")
+        .select("*")
+        .eq(
+          "client_id",
+          currentClientId
+        )
+        .order(
+          "matched_at",
+          {
+            ascending: false
+          }
+        );
+
+
+    if (matchesError) {
+      throw matchesError;
+    }
+
+
+    document
+      .getElementById("totalCount")
+      .textContent =
+      matches.length;
+
+
+    document
+      .getElementById("newCount")
+      .textContent = 0;
+
+
+    const tenderBox =
+      document.getElementById(
+        "tenders"
+      );
+
+    const tenderListNote =
+      document.getElementById(
+        "tenderListNote"
+      );
+
+
+    tenderBox.innerHTML = "";
+
+
+    if (!matches.length) {
+
+      radarTenderItems = [];
+      radarExpiredHidden = 0;
+
+      document
+        .getElementById("newCount")
+        .textContent = 0;
+
+      radarVisibleLimit =
+        radarPageSize;
+
+      tenderListNote.textContent =
+        "Система продолжает мониторинг по вашему профилю поиска.";
+
+      radarUpdateKpis();
+      radarApplyFilters();
+
+    } else {
+
+      // 14B: используем уже проверенную выборку тендеров,
+      // скрываем просроченные и строим радар поверх актуальных данных.
+      // Protocol 20 fix:
+      // process all matches; visible cards are still paginated by radarVisibleLimit/radarPageSize.
+      const candidateMatches =
+        matches;
+
+      const tenderIds =
+        candidateMatches
+          .map(x => x.tender_id)
+          .filter(Boolean);
+
+      const {
+        data: tenderRows,
+        error: tenderRowsError
+      } =
+        await db
+          .from("tenders")
+          .select(
+            "id, source_code, source_tender_id, source_lot_id, public_url, title, customer_name, amount, currency, expires_at, raw"
+          )
+          .in(
+            "id",
+            tenderIds
+          );
+
+      if (tenderRowsError) {
+        throw tenderRowsError;
+      }
+
+      const tenderMap =
+        new Map(
+          (tenderRows || [])
+            .map(x => [Number(x.id), x])
+        );
+
+      const nowMs =
+        Date.now();
+
+      radarTenderItems = [];
+      radarExpiredHidden = 0;
+
+      candidateMatches.forEach(
+        match => {
+
+          const tender =
+            tenderMap.get(
+              Number(
+                match.tender_id
+              )
+            );
+
+          if (!tender) {
+            return;
+          }
+
+          let deadlineMs = null;
+
+          if (tender.expires_at) {
+            const parsed =
+              new Date(
+                tender.expires_at
+              ).getTime();
+
+            if (
+              !Number.isNaN(
+                parsed
+              )
+            ) {
+              // Госзакуп: сверка объявления 17742300-1 показала,
+              // что сохранённый срок на час позже срока портала.
+              // Исправляем и сравнение просрочки, не только текст карточки.
+              deadlineMs = tender.source_code === "goszakup"
+                ? parsed - 60 * 60 * 1000
+                : parsed;
+            }
+          }
+
+          if (
+            deadlineMs !== null &&
+            deadlineMs <= nowMs
+          ) {
+            radarExpiredHidden += 1;
+            return;
+          }
+
+          const matchedAtMs =
+            match.matched_at
+              ? new Date(
+                  match.matched_at
+                ).getTime()
+              : 0;
+
+          radarTenderItems.push(
+            {
+              match: match,
+              tender: tender,
+              keywords:
+                normalizeMatchedKeywords(
+                  match.matched_keyword
+                ),
+              deadlineMs: deadlineMs,
+              matchedAtMs:
+                Number.isNaN(
+                  matchedAtMs
+                )
+                  ? 0
+                  : matchedAtMs
+            }
+          );
+
+        }
+      );
+
+      document
+        .getElementById("newCount")
+        .textContent =
+        radarTenderItems.length;
+
+      radarVisibleLimit =
+        radarPageSize;
+
+      radarUpdateKpis();
+      radarApplyFilters(false);
+
+    }
+
+
+    // Protocol 20.1: once an authenticated client cabinet is opened,
+    // hide ALL auth/activation blocks. This prevents the Gumroad
+    // license form from reappearing above the cabinet after F5.
+    hideAuthBlocks();
+
+    document
+      .getElementById("cabinet")
+      .style.display =
+      "block";
+
+
+    clearMessage();
+
+
+  } catch(err) {
+
+    console.error(err);
+
+    if (isExpiredAuthError(err)) {
+      await recoverExpiredSession();
+      return;
+    }
+
+    showLoginHome();
+    showError(
+      "Не удалось открыть кабинет: " +
+      (err.message || err)
+    );
+
+  }
+
+}
+
+
+async function init() {
+
+  const isRecoveryLink =
+    window.location.hash.includes("type=recovery") ||
+    window.location.search.includes("type=recovery");
+
+  if (isRecoveryLink) {
+    return;
+  }
+
+  gumroadLicenseVerified =
+    sessionStorage.getItem(
+      "tr_gumroad_license_verified"
+    ) === "1";
+
+  gumroadLicenseEmail =
+    normalizeEmail(
+      sessionStorage.getItem(
+        "tr_gumroad_license_email"
+      )
+    );
+
+  loadPendingLicenseMeta();
+
+  const {
+    data: {
+      session
+    },
+    error: sessionError
+  } =
+    await sb.auth.getSession();
+
+  if (sessionError && isExpiredAuthError(sessionError)) {
+    await recoverExpiredSession();
+    return;
+  }
+
+  if (session?.user) {
+    try {
+      await bindPendingLicenseToUser(session.user);
+      await openCabinet(session.user);
+      return;
+    } catch (error) {
+      console.error(error);
+
+      if (isExpiredAuthError(error)) {
+        await recoverExpiredSession();
+        return;
+      }
+
+      try {
+        await sb.auth.signOut({ scope: "local" });
+      } catch (_) {}
+
+      showLoginHome();
+      showError(
+        error.message ||
+        "Не удалось открыть кабинет. Войдите повторно."
+      );
+      return;
+    }
+  }
+
+  if (gumroadLicenseVerified && gumroadLicenseEmail) {
+    showFirstRegistrationAfterLicense(
+      gumroadLicenseEmail
+    );
+    return;
+  }
+
+  showLoginHome();
+
+}
+
+init();
+
+</script>
+
+</body>
+</html>
