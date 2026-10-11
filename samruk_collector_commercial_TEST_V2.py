@@ -742,7 +742,7 @@ def wait_for_detail_text(driver, lot_id, timeout=WAIT_SECONDS):
             body = d.execute_script("return document.body ? document.body.innerText : ''") or ""
             if f"/{lot_id}/lot" not in url:
                 return False
-            if re.search(rf"№\\s*{re.escape(lot_id)}\\b", body) is None:
+            if re.search(rf"№\s*{re.escape(lot_id)}\b", body) is None:
                 return False
             markers = (
                 "ЗАКАЗЧИК",
@@ -756,10 +756,8 @@ def wait_for_detail_text(driver, lot_id, timeout=WAIT_SECONDS):
         except Exception:
             return False
 
-    try:
-        WebDriverWait(driver, min(timeout, 12)).until(ready)
-    except Exception:
-        pass
+    # Never accept a timed-out detail page as successfully checked.
+    WebDriverWait(driver, timeout).until(ready)
 
     time.sleep(0.35)
     return driver.execute_script(
@@ -1012,6 +1010,8 @@ def open_fresh_search_page_for_lot(driver, keyword, page, lot_id):
     target = lot_search_url(keyword, page)
 
     for attempt in range(1, 4):
+        # Recreate the SPA document so a prior lot detail cannot be reused.
+        driver.get("about:blank")
         driver.get(target)
         try:
             wait_for_target_lot_card(driver, lot_id, timeout=10)
