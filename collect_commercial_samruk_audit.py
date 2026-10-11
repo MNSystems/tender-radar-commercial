@@ -24,7 +24,7 @@ def main():
     import samruk_collector_commercial_TEST_V2 as collector
     collector.KEYWORDS = keywords
     collector.MAX_PAGES_PER_KEYWORD = 1
-    collector.DETAIL_LIMIT = 3
+    collector.DETAIL_LIMIT = 0  # Enrich all active rows in the bounded first-page sample.
     original_wait = collector.wait_for_page_snapshot
     def strict_wait(driver, previous_signature=None, timeout=collector.WAIT_SECONDS):
         items = original_wait(driver, previous_signature, timeout)
@@ -81,6 +81,8 @@ def main():
                     "customer": row.get("customer_name"), "expires_at": row.get("expires_at"),
                     "status": row.get("status_name"),
                     "detail_checked": bool((row.get("raw") or {}).get("detail_checked")),
+                    "description": row.get("description"),
+                    "detail_error": (row.get("raw") or {}).get("detail_error"),
                     "matched_keywords": result["matched_keyword"], "url": row["public_url"]
                 }, ensure_ascii=False))
     print(json.dumps({
