@@ -1187,6 +1187,11 @@
       Войти
     </button>
 
+    <button id="resendConfirmationButton" type="button" class="link-button"
+      style="display:none; margin-top:14px" onclick="resendConfirmationEmail()">
+      Получить новое письмо подтверждения
+    </button>
+
     <div class="register-wrap">
       Первый вход после покупки?
       <button
@@ -1994,6 +1999,55 @@ const SUPABASE_URL =
 
 const SUPABASE_KEY =
   "sb_publishable__xjoFMW6_jzDtIL1ub8uRg_JUxXhSa8";
+
+
+function readAuthCallbackError(hash, search) {
+  for (const value of [hash, search]) {
+    const params = new URLSearchParams(value.replace(/^[#?]/, ""));
+    if (params.has("error") || params.has("error_code") || params.has("error_description")) {
+      return {
+        code: params.get("error_code") || params.get("error") || "auth_callback_error",
+        description: params.get("error_description") || ""
+      };
+    }
+  }
+  return null;
+}
+
+// Capture before the SDK processes and removes callback parameters.
+const authCallbackError = readAuthCallbackError(window.location.hash, window.location.search);
+
+function showConfirmationProblem() {
+  showLoginHome();
+  const button = document.getElementById("resendConfirmationButton");
+  button.style.display = "block";
+  showError("Ссылка подтверждения недействительна или устарела. Почта ещё не подтверждена. Введите email и нажмите «Получить новое письмо подтверждения». Повторно регистрироваться не нужно.");
+}
+
+async function resendConfirmationEmail() {
+  const email = normalizeEmail(document.getElementById("email").value);
+  const button = document.getElementById("resendConfirmationButton");
+  if (!email || !email.includes("@")) {
+    showError("Введите email, указанный при регистрации.");
+    return;
+  }
+  if (button.disabled) return;
+  button.disabled = true;
+  showInfo("Запрашиваем новое письмо подтверждения...");
+  try {
+    const { error } = await sb.auth.resend({
+      type: "signup",
+      email,
+      options: { emailRedirectTo: window.location.origin + window.location.pathname }
+    });
+    if (error) throw error;
+    showSuccess("Запрос принят. Откройте самое новое письмо Supabase Auth для этой регистрации и нажмите ссылку подтверждения. Старые письма использовать не нужно.");
+  } catch (error) {
+    showError("Не удалось запросить письмо подтверждения: " + (error.message || "Ошибка сети"));
+  } finally {
+    button.disabled = false;
+  }
+}
 
 const sb =
   supabase.createClient(
@@ -4666,10 +4720,12 @@ async function login() {
 
   if (error) {
 
-    showError(
-      "Ошибка входа: " +
-      error.message
-    );
+    if (error.code === "email_not_confirmed" || error.message === "Email not confirmed") {
+      document.getElementById("resendConfirmationButton").style.display = "block";
+      showError("Почта ещё не подтверждена. Нажмите «Получить новое письмо подтверждения» и откройте самое новое письмо.");
+    } else {
+      showError("Ошибка входа: " + error.message);
+    }
 
     return;
   }
@@ -6267,6 +6323,12 @@ async function openCabinet(user) {
 
 
 async function init() {
+
+  if (authCallbackError) {
+    showConfirmationProblem();
+    window.history.replaceState(null, "", window.location.pathname);
+    return;
+  }
 
   const isRecoveryLink =
     window.location.hash.includes("type=recovery") ||
