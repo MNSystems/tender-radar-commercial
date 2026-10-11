@@ -16,7 +16,7 @@ jobs:
         with:
           python-version: '3.12'
       - name: Install parser dependency
-        run: python -m pip install requests==2.32.5
+        run: python -m pip install requests==2.32.5 pypdf==6.1.1
       - name: Collect sample without database writes
         env:
           TRKZ_TEST_SUPABASE_URL: https://aypqwhhplogolzczubwi.supabase.co
