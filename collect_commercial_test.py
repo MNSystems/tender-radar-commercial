@@ -109,6 +109,26 @@ def main():
     summary = {"mode": "apply" if args.apply else "dry-run", "source": "goszakup",
                "partial_scan": True, "profiles": len(active_profiles), "keywords": len(keywords),
                "collected": len(rows), "active": sum(r["is_active"] for r in rows)}
+    preview = []
+    candidate_matches = 0
+    for row in rows:
+        if not row["is_active"]:
+            continue
+        probe = dict(row, id=row["source_lot_id"])
+        for profile in active_profiles:
+            result = match(profile, probe)
+            if result:
+                candidate_matches += 1
+                preview.append({
+                    "profile_id": profile["id"], "lot_id": row["source_lot_id"],
+                    "title": row["title"], "amount": row.get("amount"),
+                    "expires_at": row["expires_at"], "status": row["status_name"],
+                    "matched_keywords": result["matched_keyword"], "url": row["public_url"],
+                })
+    summary["candidate_matches"] = candidate_matches
+    # Public procurement fields only; no client email, key or raw payload.
+    for item in preview:
+        print("TENDER_PREVIEW " + json.dumps(item, ensure_ascii=False))
     if args.apply and rows:
         upsert(cfg, "tenders", "source_code,source_lot_id", rows)
         # Re-read access and filters immediately before matching.
