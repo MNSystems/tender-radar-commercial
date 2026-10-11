@@ -34,7 +34,8 @@ def main():
             body = driver.find_element(collector.By.TAG_NAME, "body").text or ""
             normalized = " ".join(body.split())
             zero = re.search(r"Найдено\\s*:?\\s*0(?!\\d)", normalized, re.IGNORECASE)
-            return normalized, bool(zero)
+            empty_message = "по вашему запросу ничего не найдено" in normalized.casefold()
+            return normalized, bool(zero) or empty_message
         body, zero = page_state()
         if zero:
             return []
