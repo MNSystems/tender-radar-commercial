@@ -1,0 +1,25 @@
+name: Commercial test collector (read only)
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: commercial-test-collector
+  cancel-in-progress: false
+jobs:
+  dry-run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install parser dependency
+        run: python -m pip install requests==2.32.5
+      - name: Collect sample without database writes
+        env:
+          TRKZ_TEST_SUPABASE_URL: https://aypqwhhplogolzczubwi.supabase.co
+          TRKZ_TEST_SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.TRKZ_TEST_SUPABASE_SERVICE_ROLE_KEY }}
+          TRKZ_TEST_GOSZAKUP_TOKEN: ${{ secrets.TRKZ_TEST_GOSZAKUP_TOKEN }}
+        run: python collect_commercial_test.py --limit 50
