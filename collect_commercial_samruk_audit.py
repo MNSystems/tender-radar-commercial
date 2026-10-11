@@ -1,6 +1,7 @@
 """Read-only bounded Samruk audit; no database writes or notifications."""
 from datetime import datetime, timezone
 import json
+import re
 from pathlib import Path
 import tempfile
 import collect_commercial_test as pilot
@@ -27,9 +28,28 @@ def main():
     original_wait = collector.wait_for_page_snapshot
     def strict_wait(driver, previous_signature=None, timeout=collector.WAIT_SECONDS):
         items = original_wait(driver, previous_signature, timeout)
-        if not items and "Найдено 0" not in (driver.find_element(collector.By.TAG_NAME, "body").text or ""):
-            raise RuntimeError("Samruk returned neither cards nor an explicit zero result")
-        return items
+        if items:
+            return items
+        def page_state():
+            body = driver.find_element(collector.By.TAG_NAME, "body").text or ""
+            normalized = " ".join(body.split())
+            zero = re.search(r"Найдено\\s*:?\\s*0(?!\\d)", normalized, re.IGNORECASE)
+            return normalized, bool(zero)
+        body, zero = page_state()
+        if zero:
+            return []
+        # One bounded retry for a slowly rendered SPA; ambiguity remains an error.
+        items = original_wait(driver, previous_signature, timeout)
+        if items:
+            return items
+        body, zero = page_state()
+        if zero:
+            return []
+        print("SAMRUK_PAGE_DIAGNOSTIC " + json.dumps({
+            "url": driver.current_url, "title": driver.title,
+            "body_excerpt": body[:4000]
+        }, ensure_ascii=False), flush=True)
+        raise RuntimeError("Samruk returned neither cards nor an explicit zero result after retry")
     collector.wait_for_page_snapshot = strict_wait
     with tempfile.TemporaryDirectory(prefix="trkz-samruk-audit-") as directory:
         collector.OUT = Path(directory)
