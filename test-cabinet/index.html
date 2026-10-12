@@ -1116,10 +1116,11 @@
 
 <div class="container">
 
+  <div id="sessionLoading" class="card login-card" role="status">Загружаем кабинет…</div>
   <div id="message"></div>
 
   <!-- ===== Gumroad license gate V2 ===== -->
-  <div id="licenseBlock" class="card login-card">
+  <div id="licenseBlock" class="card login-card" style="display:none">
 
     <h2>Доступ по лицензии Gumroad</h2>
 
@@ -1849,7 +1850,7 @@
           </div>
         </div>
 
-        <p class="radar-period-help"><strong>Фильтр по сроку подачи заявок:</strong> здесь отображаются тендеры, у которых приём заявок заканчивается сегодня, в ближайшие 3 или 7 дней. Часы радара — UTC+6; сроки Госзакуп отображаются по времени официального портала.</p>
+        <p class="radar-period-help"><strong>Фильтр по сроку подачи заявок:</strong> здесь отображаются тендеры, у которых приём заявок заканчивается сегодня, в ближайшие 3 или 7 дней. Часы радара — UTC+6; сроки Госзакуп и Самрука отображаются по времени официальных порталов (UTC+5).</p>
         <div class="radar-results-note" id="radarKzClock" aria-live="off">Время Казахстана: —</div>
         <div class="radar-periods">
           <button class="radar-filter-btn active" data-radar-period="all" onclick="radarSetPeriod('all')">Все</button>
@@ -2685,7 +2686,7 @@ function radarUpdateKazakhstanClock() {
   el.textContent = "Время радара (UTC+6): " +
     pad(nowKz.getUTCDate()) + "." + pad(nowKz.getUTCMonth() + 1) + "." +
     nowKz.getUTCFullYear() + ", " + pad(nowKz.getUTCHours()) + ":" +
-    pad(nowKz.getUTCMinutes()) + ". Сроки Госзакуп показаны по времени официального портала.";
+    pad(nowKz.getUTCMinutes()) + ". Сроки Госзакуп и Самрука показаны по времени официальных порталов (UTC+5).";
 }
 
 // Каждую минуту удаляем из текущего списка истекшие сроки без F5.
@@ -3404,7 +3405,7 @@ function radarBuildTenderCard(item) {
     ],
     [
       "Срок подачи",
-      tender.source_code === "goszakup"
+      (tender.source_code === "goszakup" || tender.source_code === "samruk")
         ? formatGoszakupDateTime(
             tender.expires_at
           )
@@ -3642,6 +3643,18 @@ function radarBuildTenderCard(item) {
 
   }
 
+  // Samruk detail links fail on a fresh page load; exact-number search works.
+  const samrukLotId = String(tender.source_lot_id || "").trim();
+  const samrukSearchLink =
+    tender.source_code === "samruk" && /^\d+$/.test(samrukLotId);
+
+  if (samrukSearchLink) {
+    tenderUrl =
+      "https://zakup.sk.kz/#/ext?tabs=lot&q=" +
+      encodeURIComponent(samrukLotId) +
+      "&adst=ALL&lst=ALL&page=1";
+  }
+
   if (
     !tenderUrl &&
     tender.public_url
@@ -3672,9 +3685,16 @@ function radarBuildTenderCard(item) {
       "noopener noreferrer";
 
     link.textContent =
-      "Открыть тендер";
+      samrukSearchLink ? "Найти лот на Самруке" : "Открыть тендер";
 
     actions.appendChild(link);
+
+    if (samrukSearchLink) {
+      const hint = document.createElement("span");
+      hint.className = "tender-field";
+      hint.textContent = "На Самруке нажмите на найденную карточку лота.";
+      actions.appendChild(hint);
+    }
 
   }
 
@@ -6402,7 +6422,13 @@ async function init() {
 
 }
 
-init();
+init().catch((error) => {
+  console.error(error);
+  showLoginHome();
+  showError("Не удалось проверить сессию. Войдите повторно.");
+}).finally(() => {
+  document.getElementById("sessionLoading").style.display = "none";
+});
 
 </script>
 
