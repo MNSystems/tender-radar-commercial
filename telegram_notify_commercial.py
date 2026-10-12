@@ -9,7 +9,7 @@ import os
 import json
 import urllib.request
 import urllib.parse
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 MAX_ITEMS = 5
 TARGET = "https://aypqwhhplogolzczubwi.supabase.co"
@@ -115,6 +115,16 @@ def send_telegram(token, chat_id, text):
     return str(result.get("result", {}).get("message_id", ""))
 
 
+def deadline_text(value):
+    if not value:
+        return "—"
+    try:
+        dt = parse_dt(value)
+    except (TypeError, ValueError, OverflowError):
+        return "Дата не определена"
+    return dt.astimezone(timezone(timedelta(hours=5))).strftime("%d.%m.%Y, %H:%M") + " (Казахстан, UTC+5)"
+
+
 def build_digest(destination, matches, tenders):
     ordered = sorted(
         matches,
@@ -138,7 +148,7 @@ def build_digest(destination, matches, tenders):
         lines += [
             f"{i}. {short(t.get('title') or 'Тендер без названия')}",
             f"   Сумма: {money_text(t.get('amount'), t.get('currency'))}",
-            f"   Срок: {t.get('expires_at') or '—'}",
+            f"   Срок: {deadline_text(t.get('expires_at'))}",
             f"   Совпадение: {short(matched, 80)}",
         ]
         if t.get("public_url"):
