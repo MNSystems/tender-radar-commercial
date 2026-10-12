@@ -1,5 +1,7 @@
-name: Commercial Samruk import (manual)
+name: Commercial Samruk import
 on:
+  schedule:
+    - cron: '47 2,8,14,20 * * *'
   workflow_dispatch:
     inputs:
       apply:
@@ -27,10 +29,29 @@ jobs:
         env:
           TRKZ_TEST_SUPABASE_URL: https://aypqwhhplogolzczubwi.supabase.co
           TRKZ_TEST_SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.TRKZ_TEST_SUPABASE_SERVICE_ROLE_KEY }}
-          APPLY_IMPORT: ${{ inputs.apply }}
+          APPLY_IMPORT: ${{ github.event_name == 'schedule' || inputs.apply }}
+        shell: bash
         run: |
+          set -euo pipefail
           if [ "$APPLY_IMPORT" = "true" ]; then
-            python collect_commercial_samruk_import.py --apply
+            python collect_commercial_samruk_import.py --apply | tee /tmp/trkz-import.log
           else
-            python collect_commercial_samruk_import.py
+            python collect_commercial_samruk_import.py | tee /tmp/trkz-import.log
           fi
+      - name: Run result
+        if: always()
+        shell: bash
+        env:
+          IMPORT_RESULT: ${{ job.status }}
+        run: |
+          {
+            echo "## Commercial import"
+            echo "Result: $IMPORT_RESULT"
+            echo "Target: aypqwhhplogolzczubwi"
+            echo "Coverage: bounded sample; notifications are disabled"
+            if [ -f /tmp/trkz-import.log ]; then
+              echo '~~~json'
+              tail -n 1 /tmp/trkz-import.log
+              echo '~~~'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
