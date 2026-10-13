@@ -36,13 +36,13 @@ th{font-size:12px;color:#4c6076;background:#f8fbfe}
 </style>
 </head>
 <body>
-<div style="padding:12px;background:#fff3cd;color:#553f00">Тестовая административная страница новой базы. Права выдаются сервером.</div>
+
 <div class="wrap">
 <div id="loginView" class="card login-card">
 <h1>Tender Radar KZ</h1>
 <div class="sub">Административная страница обратной связи</div>
 <label for="email">Администратор</label>
-<input id="email" type="email" value="" placeholder="Email тестового администратора">
+<input id="email" type="email" value="" placeholder="Email администратора">
 <label for="password">Пароль</label>
 <input id="password" type="password">
 <div class="actions" style="margin-top:16px"><button id="loginBtn" onclick="login()">Войти</button></div>
@@ -92,7 +92,7 @@ async function login(){
  clearMsg("loginMsg");
  const email=document.getElementById("email").value.trim().toLowerCase();
  const password=document.getElementById("password").value;
- if(!email){showMsg("loginMsg","Введите email административного тестового аккаунта.","err");return}
+ if(!email){showMsg("loginMsg","Введите email административного аккаунта.","err");return}
  if(!password){showMsg("loginMsg","Введите пароль.","err");return}
  const btn=document.getElementById("loginBtn");btn.disabled=true;
  const {data,error}=await adminSb.auth.signInWithPassword({email,password});
@@ -118,7 +118,7 @@ async function openAdmin(){
 }
 
 function fmtDate(v){try{return new Date(v).toLocaleString("ru-RU")}catch(_){return v||""}}
-function typeLabel(k){return k==="suggestion"?"Предложение":"Ошибка"}
+function typeLabel(k){return k==="request"?"Обращение":k==="suggestion"?"Предложение":"Ошибка"}
 
 async function loadFeedback(){
  clearMsg("adminMsg");
