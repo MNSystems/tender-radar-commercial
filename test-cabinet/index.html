@@ -6253,12 +6253,9 @@ async function openCabinet(user) {
                 parsed
               )
             ) {
-              // Госзакуп: сверка объявления 17742300-1 показала,
-              // что сохранённый срок на час позже срока портала.
-              // Исправляем и сравнение просрочки, не только текст карточки.
-              deadlineMs = tender.source_code === "goszakup"
-                ? parsed - 60 * 60 * 1000
-                : parsed;
+              // expires_at already represents the UTC instant.
+              // Use the same deadline for display, eligibility and Telegram.
+              deadlineMs = parsed;
             }
           }
 
