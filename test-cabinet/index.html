@@ -5,7 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <title>Tender Radar KZ Commercial — тестовый кабинет</title>
+  <title>Tender Radar KZ Commercial — личный кабинет</title>
   <!-- GUMROAD LICENSE V4: persistent account binding; key required only for first activation -->
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3"></script>
@@ -1120,7 +1120,6 @@
 </head>
 
 <body>
-<div role="status" style="padding:12px 24px;background:#fff3cd;color:#553f00;font-weight:bold">Тестовый кабинет. Используйте только тестовый аккаунт. Рабочие клиенты сюда не перенесены.</div>
 
 <header>
   <h1>Tender Radar KZ Commercial</h1>
@@ -1607,13 +1606,13 @@
         <h3>Подключение Telegram</h3>
 
         <div class="hint" style="margin-bottom:14px">
-          Нажмите «Открыть Telegram → Start». Ручной Chat ID не нужен. Эта копия подключается только к отдельному тестовому боту.
+          Нажмите «Открыть Telegram → Start», затем нажмите Start в чате бота. Уведомления будут приходить в ваш Telegram. Ручной Chat ID не нужен.
         </div>
 
         <div id="telegramOfficialLogin">
           <button id="telegramStartButton" onclick="startTelegramConnect()">Открыть Telegram → Start</button>
           <button class="secondary" onclick="refreshTelegramConnection()">Проверить подключение</button>
-          <p id="telegramStartHint" class="hint">Откройте тестового бота, нажмите Start, затем вернитесь сюда и проверьте подключение. Если Telegram не установлен, можно выбрать «Пока не нужно».</p>
+          <p id="telegramStartHint" class="hint">Откройте бота, нажмите Start, затем вернитесь сюда и проверьте подключение. Если Telegram не установлен, можно выбрать «Пока не нужно».</p>
         </div>
 
         <div class="button-row" style="margin-top:14px">
@@ -1973,7 +1972,7 @@
       <div class="feedback-head">
         <div>
           <h3>Обратная связь</h3>
-          <p>Сообщить об ошибке или оставить предложение.</p>
+          <p>Возникли вопросы или трудности? Напишите здесь — я свяжусь с вами и помогу.</p>
         </div>
 
         <button
@@ -1981,22 +1980,16 @@
           class="secondary"
           onclick="toggleFeedbackForm()"
         >
-          Сообщить
+          Написать
         </button>
       </div>
 
       <div id="feedbackForm" class="feedback-form">
-        <label for="feedbackKind"><strong>Тип сообщения</strong></label>
-        <select id="feedbackKind">
-          <option value="error">Ошибка</option>
-          <option value="suggestion">Предложение</option>
-        </select>
-
         <label for="feedbackText"><strong>Сообщение</strong></label>
         <textarea
           id="feedbackText"
           maxlength="2000"
-          placeholder="Кратко опишите, что произошло или что вы предлагаете улучшить"
+          placeholder="Опишите вопрос или трудность. Укажите удобный способ связи: email, Telegram или телефон."
         ></textarea>
 
         <button
@@ -4900,7 +4893,7 @@ async function loadAllClientMatches(clientId) {
     if (error) throw error;
     all.push(...(data || []));
     if (!data || data.length < 100) return all;
-    if (offset >= 99900) throw new Error("Слишком большая подборка. Обратитесь к администратору тестовой среды.");
+    if (offset >= 99900) throw new Error("Слишком большая подборка. Обратитесь за помощью через обратную связь.");
   }
 }
 async function loadTenderBatches(ids) {
@@ -4923,19 +4916,19 @@ async function startTelegramConnect() {
     const url = new URL(result.url);
     if (url.origin !== "https://t.me" || !/^[A-Za-z0-9_]+$/.test(url.pathname.slice(1)) ||
         url.pathname.toLowerCase() === "/mn_tender_radar_bot" || !/^[0-9a-f]{64}$/.test(url.searchParams.get("start") || "")) {
-      throw new Error("Сервер вернул неверную ссылку тестового бота.");
+      throw new Error("Не удалось получить ссылку подключения Telegram.");
     }
     const link = document.createElement("a");
     link.href = url.href; link.target = "_blank"; link.rel = "noopener noreferrer";
-    link.textContent = "Открыть тестового бота в Telegram";
+    link.textContent = "Открыть бота в Telegram";
     document.getElementById("telegramStartHint").replaceChildren(link, document.createTextNode(". Нажмите Start; затем вернитесь и проверьте подключение. Ссылка действует 10 минут."));
-    showInfo("Ссылка готова. Откройте тестового бота и нажмите Start.");
+    showInfo("Ссылка готова. Откройте бота и нажмите Start.");
   } catch (error) { showError(error.message || "Не удалось создать ссылку Telegram."); }
   finally { button.disabled = false; }
 }
 async function refreshTelegramConnection() {
   const { data: { session } } = await sb.auth.getSession();
-  if (!session?.user) { showError("Войдите в тестовый аккаунт."); return; }
+  if (!session?.user) { showError("Войдите в свой аккаунт."); return; }
   await openCabinet(session.user);
 }
 
@@ -5712,7 +5705,7 @@ function toggleFeedbackForm() {
 
   const willOpen = form.style.display !== "block";
   form.style.display = willOpen ? "block" : "none";
-  button.textContent = willOpen ? "Закрыть" : "Сообщить";
+  button.textContent = willOpen ? "Закрыть" : "Написать";
 
   if (willOpen) {
     setFeedbackLocalMessage("");
@@ -5723,7 +5716,6 @@ function toggleFeedbackForm() {
 
 
 async function submitFeedback() {
-  const kindEl = document.getElementById("feedbackKind");
   const textEl = document.getElementById("feedbackText");
   const button = document.getElementById("feedbackSendBtn");
 
@@ -5735,7 +5727,7 @@ async function submitFeedback() {
     return;
   }
 
-  const kind = kindEl ? kindEl.value : "error";
+  const kind = "request";
   const message = textEl ? textEl.value.trim() : "";
 
   if (message.length < 3) {
@@ -5769,7 +5761,7 @@ async function submitFeedback() {
 
     if (textEl) textEl.value = "";
     setFeedbackLocalMessage(
-      "Спасибо. Сообщение отправлено."
+      "Спасибо! Ваше обращение отправлено. Я свяжусь с вами по указанным контактам."
     );
 
   } catch (error) {
