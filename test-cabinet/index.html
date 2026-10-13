@@ -1103,7 +1103,20 @@
     .radar-page-btn:disabled { opacity:.42; cursor:default; }
     .radar-page-dots { color:#64748b; padding:0 3px; }
     .radar-page-counter { color:#64748b; font-size:12px; flex-basis:100%; text-align:center; margin-top:4px; }
-  </style>
+  
+/* Search dashboard adapted from the Decor Lux attention-first layout. */
+.search-dashboard { border-top: 5px solid #067c83; }
+.search-dashboard .dashboard-intro {color:#557080; margin:8px 0 18px;}
+.dashboard-attention {background:#fff3d9; color:#74470b; padding:18px; border-radius:12px; font-size:18px; margin-bottom:18px;}
+.dashboard-metrics {display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;}
+.dashboard-metric {background:#f4f8fb; padding:18px; border-radius:12px; border:1px solid #dbe6ee;}
+.dashboard-metric strong {display:block;font-size:34px;color:#0f3b66;margin:8px 0;}
+.dashboard-metric span {display:block;color:#557080;font-size:13px;line-height:1.5;}
+.dashboard-actions {display:flex;gap:10px;flex-wrap:wrap;margin-top:18px;}
+.dashboard-sources {color:#557080;margin-top:18px;line-height:1.6;}
+@media(max-width:800px){.dashboard-metrics{grid-template-columns:repeat(2,minmax(0,1fr));}}
+
+</style>
 </head>
 
 <body>
@@ -1452,6 +1465,25 @@
 
     </div>
 
+
+
+    <section class="card search-dashboard" aria-labelledby="searchDashboardHeading">
+      <h2 id="searchDashboardHeading">Панель поиска и работы с тендерами</h2>
+      <p class="dashboard-intro">Показатели вашей актуальной подборки. Обновляются вместе с данными кабинета.</p>
+      <div class="dashboard-attention" id="dashboardAttention" role="status">Загружаем подборку…</div>
+      <div class="dashboard-metrics">
+        <div class="dashboard-metric">Новые<strong id="dashboardNew">—</strong><span>Лоты, которые ещё не переведены в рабочий статус</span></div>
+        <div class="dashboard-metric">До 48 часов<strong id="dashboardUrgent">—</strong><span>Ближайшие сроки подачи среди всей актуальной подборки</span></div>
+        <div class="dashboard-metric">В работу<strong id="dashboardWork">—</strong><span>Лоты, которыми вы уже занимаетесь</span></div>
+        <div class="dashboard-metric">Избранное<strong id="dashboardFavorite">—</strong><span>Ваша отдельная отметка важного лота</span></div>
+      </div>
+      <div class="dashboard-actions">
+        <button type="button" onclick="radarOpenDashboardQueue('urgent')">Посмотреть ближайшие сроки</button>
+        <button type="button" onclick="radarOpenDashboardQueue('in_work')">Открыть «В работу»</button>
+        <button type="button" onclick="radarOpenDashboardQueue('favorite')">Открыть «Избранное»</button>
+      </div>
+      <div class="dashboard-sources" id="dashboardSources">Источники: загружаем данные…</div>
+    </section>
 
     <div class="card">
 
@@ -2851,7 +2883,51 @@ function radarMatchesWorkFilter(item) {
 
 }
 
+
+function radarDashboardSummary(items, nowMs) {
+  const unique = new Map();
+  items.forEach(item => {
+    if (item.deadlineMs !== null && Number.isFinite(item.deadlineMs) && item.deadlineMs <= nowMs) return;
+    const id = item.tender.id;
+    if (!unique.has(id)) unique.set(id, {item, statuses: new Set(), favorite: false});
+    const record = unique.get(id);
+    record.statuses.add(item.match.status || "new");
+    record.favorite = record.favorite || Boolean(item.match.is_favorite);
+  });
+  const result = {total: unique.size, newCount:0, urgent:0, work:0, favorite:0, goszakup:0, samruk:0};
+  unique.forEach(record => {
+    const item = record.item;
+    if (record.statuses.has("new")) result.newCount++;
+    if (record.statuses.has("in_work")) result.work++;
+    if (record.favorite) result.favorite++;
+    if (Number.isFinite(item.deadlineMs) && item.deadlineMs > nowMs && item.deadlineMs - nowMs <= 48*60*60*1000) result.urgent++;
+    if (item.tender.source_code === "goszakup") result.goszakup++;
+    if (item.tender.source_code === "samruk") result.samruk++;
+  });
+  return result;
+}
+function radarUpdateDashboard() {
+  const summary = radarDashboardSummary(radarTenderItems, Date.now());
+  const values = {dashboardNew:summary.newCount,dashboardUrgent:summary.urgent,dashboardWork:summary.work,dashboardFavorite:summary.favorite};
+  Object.entries(values).forEach(([id,value])=>{const el=document.getElementById(id);if(el)el.textContent=value;});
+  const attention=document.getElementById("dashboardAttention");
+  if(attention) attention.textContent = !summary.total
+    ? "В актуальной подборке пока нет лотов. Проверьте профиль поиска."
+    : summary.urgent
+      ? "Требует внимания: у " + summary.urgent + " лотов срок подачи закончится в ближайшие 48 часов."
+      : "В ближайшие 48 часов сроки не заканчиваются. Можно разобрать новые лоты и рабочую очередь.";
+  const sources=document.getElementById("dashboardSources");
+  if(sources)sources.textContent="Актуальные лоты: Госзакуп — "+summary.goszakup+", Самрук-Казына — "+summary.samruk+". Один лот учитывается один раз. Избранное может пересекаться с рабочими статусами.";
+}
+function radarOpenDashboardQueue(queue) {
+  radarSetWorkFilter(queue === "urgent" ? "all" : queue);
+  radarSetPeriod(queue === "urgent" ? "48h" : "all");
+  const target=document.querySelector("[data-radar-work='all']");
+  if(target)target.scrollIntoView({behavior:"smooth",block:"center"});
+}
+
 function radarUpdateWorkQueueCounts() {
+  radarUpdateDashboard();
 
   const counts = {
     all: radarTenderItems.length,
@@ -2898,6 +2974,7 @@ function radarUpdateWorkQueueCounts() {
 
 
 function radarUpdateKpis() {
+  radarUpdateDashboard();
 
   const active =
     radarTenderItems.length;
