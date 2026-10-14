@@ -6,6 +6,11 @@ on:
         description: 'Eligible profile ID to search'
         required: true
         type: string
+      apply:
+        description: 'Write results to Supabase (false = read-only preview)'
+        required: true
+        type: boolean
+        default: false
 permissions:
   contents: read
 concurrency:
@@ -28,14 +33,25 @@ jobs:
           TRKZ_TEST_SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.TRKZ_TEST_SUPABASE_SERVICE_ROLE_KEY }}
           TRKZ_TEST_GOSZAKUP_TOKEN: ${{ secrets.TRKZ_TEST_GOSZAKUP_TOKEN }}
           PROFILE_ID: ${{ inputs.profile_id }}
+          APPLY: ${{ inputs.apply }}
         run: |
           set -euo pipefail
-          python collect_commercial_test.py --profile-id "$PROFILE_ID" --limit 50 --apply
+          case "$PROFILE_ID" in *[!0-9]*|'') echo "Invalid numeric profile ID"; exit 2;; esac
+          if [ "$APPLY" = "true" ]; then
+            python collect_commercial_test.py --profile-id "$PROFILE_ID" --limit 50 --apply
+          else
+            python collect_commercial_test.py --profile-id "$PROFILE_ID" --limit 50
+          fi
       - name: Initial verified Samruk search for the same profile
         env:
           TRKZ_TEST_SUPABASE_URL: https://aypqwhhplogolzczubwi.supabase.co
           TRKZ_TEST_SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.TRKZ_TEST_SUPABASE_SERVICE_ROLE_KEY }}
           PROFILE_ID: ${{ inputs.profile_id }}
+          APPLY: ${{ inputs.apply }}
         run: |
           set -euo pipefail
-          python collect_commercial_samruk_import.py --profile-id "$PROFILE_ID" --apply
+          if [ "$APPLY" = "true" ]; then
+            python collect_commercial_samruk_import.py --profile-id "$PROFILE_ID" --apply
+          else
+            python collect_commercial_samruk_import.py --profile-id "$PROFILE_ID"
+          fi
