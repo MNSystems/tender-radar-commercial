@@ -10,6 +10,7 @@ import collect_commercial_test as pilot
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--apply', action='store_true')
+    parser.add_argument('--profile-id', type=int, default=None, help='Limit matching and keywords to this eligible profile')
     args = parser.parse_args()
     cfg = pilot.config()
     clients = pilot.all_rows(cfg, "clients", {
@@ -21,6 +22,10 @@ def main():
     profiles = [p for p in pilot.all_rows(cfg, "profiles", {"select": "*", "active": "eq.true"})
                 if p["client_id"] in allowed
                 and "samruk" in pilot.mapper.normalize_list(p.get("sources"))]
+    if args.profile_id is not None:
+        profiles = [p for p in profiles if p['id'] == args.profile_id]
+        if not profiles:
+            raise ValueError('Profile not found or not eligible for paid Samruk search')
     keywords = sorted({w for p in profiles for w in pilot.mapper.normalize_list(p.get("include_keywords"))})
     if not keywords:
         print(json.dumps({"mode": "dry-run", "source": "samruk", "collected": 0}))
@@ -138,6 +143,8 @@ def main():
         current_profiles = [profile for profile in pilot.all_rows(cfg, "profiles", {"select": "*", "active": "eq.true"})
                             if profile["client_id"] in allowed
                             and "samruk" in pilot.mapper.normalize_list(profile.get("sources"))]
+        if args.profile_id is not None:
+            current_profiles = [p for p in current_profiles if p['id'] == args.profile_id]
         matches = []
         for tender in stored:
             if str(tender["source_lot_id"]) not in ids:
