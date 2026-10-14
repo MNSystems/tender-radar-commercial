@@ -86,6 +86,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--apply", action="store_true")
     parser.add_argument("--limit", type=int, default=50)
+    parser.add_argument("--profile-id", type=int, default=None, help="Run only this eligible client profile")
     args = parser.parse_args()
     if not 1 <= args.limit <= 200:
         parser.error("limit must be between 1 and 200")
@@ -94,6 +95,10 @@ def main():
     if not token:
         raise ValueError("TRKZ_TEST_GOSZAKUP_TOKEN required")
     active_profiles = profiles(cfg)
+    if args.profile_id is not None:
+        active_profiles = [p for p in active_profiles if p["id"] == args.profile_id]
+        if not active_profiles:
+            raise ValueError("Profile not found or not eligible for active paid Goszakup search")
     keywords = sorted({w for p in active_profiles for w in mapper.normalize_list(p.get("include_keywords"))})
     collected = []
     # Strict: any source failure stops the run before database writes.
@@ -133,6 +138,8 @@ def main():
         upsert(cfg, "tenders", "source_code,source_lot_id", rows)
         # Re-read access and filters immediately before matching.
         active_profiles = profiles(cfg)
+        if args.profile_id is not None:
+            active_profiles = [p for p in active_profiles if p["id"] == args.profile_id]
         fetched = {r["source_lot_id"] for r in rows}
         tenders = all_rows(cfg, "tenders", {"select": "*", "source_code": "eq.goszakup", "is_active": "eq.true"})
         matches = [m for t in tenders if t["source_lot_id"] in fetched and eligible(t, datetime.now(timezone.utc))
