@@ -1,0 +1,57 @@
+name: Initial client search
+on:
+  workflow_dispatch:
+    inputs:
+      profile_id:
+        description: 'Eligible profile ID to search'
+        required: true
+        type: string
+      apply:
+        description: 'Write results to Supabase (false = read-only preview)'
+        required: true
+        type: boolean
+        default: false
+permissions:
+  contents: read
+concurrency:
+  group: commercial-new-import-and-notify
+  cancel-in-progress: false
+jobs:
+  search:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: python -m pip install requests==2.32.5 pypdf==6.1.1 selenium==4.36.0
+      - name: Initial search for verified paying client's profile
+        env:
+          TRKZ_TEST_SUPABASE_URL: https://aypqwhhplogolzczubwi.supabase.co
+          TRKZ_TEST_SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.TRKZ_TEST_SUPABASE_SERVICE_ROLE_KEY }}
+          TRKZ_TEST_GOSZAKUP_TOKEN: ${{ secrets.TRKZ_TEST_GOSZAKUP_TOKEN }}
+          PROFILE_ID: ${{ inputs.profile_id }}
+          APPLY: ${{ inputs.apply }}
+        run: |
+          set -euo pipefail
+          case "$PROFILE_ID" in *[!0-9]*|'') echo "Invalid numeric profile ID"; exit 2;; esac
+          if [ "$APPLY" = "true" ]; then
+            python collect_commercial_test.py --profile-id "$PROFILE_ID" --limit 50 --apply
+          else
+            python collect_commercial_test.py --profile-id "$PROFILE_ID" --limit 50
+          fi
+      - name: Initial verified Samruk search for the same profile
+        env:
+          TRKZ_TEST_SUPABASE_URL: https://aypqwhhplogolzczubwi.supabase.co
+          TRKZ_TEST_SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.TRKZ_TEST_SUPABASE_SERVICE_ROLE_KEY }}
+          PROFILE_ID: ${{ inputs.profile_id }}
+          APPLY: ${{ inputs.apply }}
+        run: |
+          set -euo pipefail
+          if [ "$APPLY" = "true" ]; then
+            python collect_commercial_samruk_import.py --profile-id "$PROFILE_ID" --apply
+          else
+            python collect_commercial_samruk_import.py --profile-id "$PROFILE_ID"
+          fi
