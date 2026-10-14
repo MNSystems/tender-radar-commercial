@@ -125,7 +125,7 @@ def deadline_text(value):
     return dt.astimezone(timezone(timedelta(hours=5))).strftime("%d.%m.%Y, %H:%M") + " (Казахстан, UTC+5)"
 
 
-def build_digest(destination, matches, tenders):
+def build_digest(destination, matches, tenders, client_name=None):
     ordered = sorted(
         matches,
         key=lambda m: parse_dt(m.get("matched_at"))
@@ -136,7 +136,7 @@ def build_digest(destination, matches, tenders):
     lines = [
         "🔔 Tender Radar KZ Commercial",
         "",
-        destination.get("label") or "Новые тендеры",
+        "Компания: " + short(client_name, 100) if client_name else (destination.get("label") or "Новые тендеры"),
         f"Найдено новых тендеров: {len(ordered)}",
         "",
     ]
@@ -297,7 +297,7 @@ def main():
             current = rest_get(cfg, "clients?select=*&id=eq." + str(d["client_id"]))
             if not current or not paid(current[0], datetime.now(timezone.utc)):
                 continue
-            message_id = send_telegram(cfg["TELEGRAM_BOT_TOKEN"], d["chat_id"], build_digest(d, batch, tenders))
+            message_id = send_telegram(cfg["TELEGRAM_BOT_TOKEN"], d["chat_id"], build_digest(d, batch, tenders, current[0].get("name")))
             mark_all_sent(cfg, d, batch, message_id)
             digests += 1
             marked += len(batch)
