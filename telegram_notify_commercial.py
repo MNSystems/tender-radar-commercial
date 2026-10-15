@@ -196,7 +196,8 @@ def mark_all_sent(cfg, destination, matches, message_id):
 def paid(client, now):
     expiry = parse_dt(client.get("expires_at"))
     return (client.get("status") == "active" and client.get("payment_status") == "active"
-            and client.get("payment_provider") == "gumroad" and bool(client.get("license_key_hash"))
+            and ((client.get("payment_provider") == "gumroad" and bool(client.get("license_key_hash")))
+                 or client.get("payment_provider") == "bank_invoice")
             and bool(client.get("license_verified_at")) and expiry is not None and expiry > now
             and not client.get("telegram_opt_out") and int(client.get("telegram_limit") or 0) > 0)
 
