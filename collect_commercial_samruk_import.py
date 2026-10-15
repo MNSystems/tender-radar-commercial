@@ -14,11 +14,13 @@ def main():
     args = parser.parse_args()
     cfg = pilot.config()
     clients = pilot.all_rows(cfg, "clients", {
-        "select": "id", "status": "eq.active", "payment_status": "eq.active",
-        "payment_provider": "eq.gumroad", "license_key_hash": "not.is.null",
+        "select": "id,payment_provider,license_key_hash", "status": "eq.active", "payment_status": "eq.active",
+        "payment_provider": "in.(gumroad,bank_invoice)",
         "license_verified_at": "not.is.null",
         "expires_at": "gt." + datetime.now(timezone.utc).isoformat()})
-    allowed = {c["id"] for c in clients}
+    allowed = {c["id"] for c in clients if
+               (c["payment_provider"] == "bank_invoice" or
+                (c["payment_provider"] == "gumroad" and c.get("license_key_hash")))}
     profiles = [p for p in pilot.all_rows(cfg, "profiles", {"select": "*", "active": "eq.true"})
                 if p["client_id"] in allowed
                 and "samruk" in pilot.mapper.normalize_list(p.get("sources"))]
