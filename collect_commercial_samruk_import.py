@@ -137,11 +137,11 @@ def main():
         stored = pilot.all_rows(cfg, "tenders", {"select": "*", "source_code": "eq.samruk"})
         # Recheck active paid clients and current profiles after collection.
         clients = pilot.all_rows(cfg, "clients", {
-            "select": "id", "status": "eq.active", "payment_status": "eq.active",
-            "payment_provider": "eq.gumroad", "license_key_hash": "not.is.null",
+            "select": "id,payment_provider,license_key_hash", "status": "eq.active", "payment_status": "eq.active",
+            "payment_provider": "in.(gumroad,bank_invoice)",
             "license_verified_at": "not.is.null",
             "expires_at": "gt." + datetime.now(timezone.utc).isoformat()})
-        allowed = {client["id"] for client in clients}
+        allowed = {client["id"] for client in clients if (client["payment_provider"] == "bank_invoice" or (client["payment_provider"] == "gumroad" and client.get("license_key_hash")))}
         current_profiles = [profile for profile in pilot.all_rows(cfg, "profiles", {"select": "*", "active": "eq.true"})
                             if profile["client_id"] in allowed
                             and "samruk" in pilot.mapper.normalize_list(profile.get("sources"))]
