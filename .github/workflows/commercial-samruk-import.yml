@@ -1,7 +1,7 @@
 name: Commercial Samruk import
 on:
   schedule:
-    - cron: '2,32 * * * *'
+    - cron: '2 * * * *'
   workflow_dispatch:
     inputs:
       apply:
