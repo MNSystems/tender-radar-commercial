@@ -3,7 +3,9 @@ import argparse
 from datetime import datetime, timezone
 import json
 import os
+import random
 import sys
+import time
 from pathlib import Path
 import tempfile
 from urllib.parse import urlencode
@@ -105,15 +107,27 @@ def main():
     # Tolerant: Goszakup sometimes does not answer foreign servers.
     # A failed keyword is skipped; the run fails only if every keyword failed.
     # Safe: this import only upserts lots, it never deactivates or deletes.
+    # Time budget: GitHub stops the job after 30 minutes, and the database is
+    # written only at the end. Stop searching in time and save what was found.
+    # Keywords are shuffled so that every keyword gets its turn across runs.
     failed_keywords = []
+    attempted = 0
+    budget = float(os.environ.get("TRKZ_COLLECT_BUDGET_SECONDS", "1200"))
+    started = time.monotonic()
+    random.shuffle(keywords)
     for keyword in keywords:
+        if time.monotonic() - started > budget:
+            print(f"WARNING time budget reached; {len(keywords) - attempted} keywords left for next run",
+                  file=sys.stderr)
+            break
+        attempted += 1
         try:
             collected.extend(collector.collect_keyword(token, keyword, args.limit))
         except Exception as exc:
             failed_keywords.append(keyword)
             print(f"WARNING keyword skipped: {keyword}: {exc!r}", file=sys.stderr)
-    if keywords and len(failed_keywords) == len(keywords):
-        raise RuntimeError(f"Goszakup unavailable for all {len(keywords)} keywords")
+    if attempted and len(failed_keywords) == attempted:
+        raise RuntimeError(f"Goszakup unavailable for all {attempted} attempted keywords")
     with tempfile.TemporaryDirectory(prefix="trkz-test-") as directory:
         collector.OUTPUT_DIR = mapper.OUT = Path(directory)
         collector.save_json(collector.deduplicate(collected))
@@ -123,7 +137,7 @@ def main():
         row["is_active"] = eligible(row, now)
     summary = {"mode": "apply" if args.apply else "dry-run", "source": "goszakup",
                "partial_scan": True, "profiles": len(active_profiles), "keywords": len(keywords),
-               "failed_keywords": len(failed_keywords),
+               "attempted_keywords": attempted, "failed_keywords": len(failed_keywords),
                "collected": len(rows), "active": sum(r["is_active"] for r in rows)}
     preview = []
     candidate_matches = 0
