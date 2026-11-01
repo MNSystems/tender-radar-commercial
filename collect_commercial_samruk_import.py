@@ -3,6 +3,7 @@ import argparse
 from datetime import datetime, timezone
 import json
 import re
+import sys
 from pathlib import Path
 import tempfile
 import collect_commercial_test as pilot
@@ -92,6 +93,9 @@ def main():
     now = datetime.now(timezone.utc)
     verified_rows = []
     candidates = 0
+    # Tolerant: one lot whose detail page did not open is skipped,
+    # the other lots are still saved. Safe: import only upserts.
+    detail_failed = []
     for row in rows:
         try:
             end = datetime.fromisoformat(str(row.get("expires_at")).replace("Z", "+00:00"))
@@ -100,7 +104,9 @@ def main():
             future = False
         raw = row.get("raw") or {}
         if raw.get("detail_error"):
-            raise RuntimeError("Detail failed for lot " + str(row["source_lot_id"]))
+            detail_failed.append(str(row["source_lot_id"]))
+            print("WARNING detail failed, lot skipped: " + str(row["source_lot_id"]), file=sys.stderr)
+            continue
         if not future or not row.get("is_active") or not raw.get("detail_checked") or not raw.get("acceptance_deadline_checked"):
             continue
         if str(row.get("status_name") or "").strip().casefold() != "опубликовано":
@@ -123,6 +129,8 @@ def main():
                     "detail_error": (row.get("raw") or {}).get("detail_error"),
                     "matched_keywords": result["matched_keyword"], "url": row["public_url"]
                 }, ensure_ascii=False))
+    if rows and len(detail_failed) == len(rows):
+        raise RuntimeError("Detail failed for all " + str(len(rows)) + " Samruk lots")
     matches_upserted = 0
     if args.apply and verified_rows:
         fields = ("source_code source_tender_id source_lot_id public_url title description "
@@ -169,6 +177,7 @@ def main():
         "candidate_matches": candidates,
         "details_ok": sum(bool((r.get("raw") or {}).get("detail_checked")) for r in rows),
         "verified_tenders": len(verified_rows), "matches_upserted": matches_upserted,
+        "detail_failed": len(detail_failed),
         "notifications": 0,
         "deadline_note": "Only detailed lots with future acceptance deadlines are eligible."
     }, ensure_ascii=False))
