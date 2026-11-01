@@ -3,6 +3,7 @@ import argparse
 from datetime import datetime, timezone
 import json
 import os
+import sys
 from pathlib import Path
 import tempfile
 from urllib.parse import urlencode
@@ -101,9 +102,18 @@ def main():
             raise ValueError("Profile not found or not eligible for active paid Goszakup search")
     keywords = sorted({w for p in active_profiles for w in mapper.normalize_list(p.get("include_keywords"))})
     collected = []
-    # Strict: any source failure stops the run before database writes.
+    # Tolerant: Goszakup sometimes does not answer foreign servers.
+    # A failed keyword is skipped; the run fails only if every keyword failed.
+    # Safe: this import only upserts lots, it never deactivates or deletes.
+    failed_keywords = []
     for keyword in keywords:
-        collected.extend(collector.collect_keyword(token, keyword, args.limit))
+        try:
+            collected.extend(collector.collect_keyword(token, keyword, args.limit))
+        except Exception as exc:
+            failed_keywords.append(keyword)
+            print(f"WARNING keyword skipped: {keyword}: {exc!r}", file=sys.stderr)
+    if keywords and len(failed_keywords) == len(keywords):
+        raise RuntimeError(f"Goszakup unavailable for all {len(keywords)} keywords")
     with tempfile.TemporaryDirectory(prefix="trkz-test-") as directory:
         collector.OUTPUT_DIR = mapper.OUT = Path(directory)
         collector.save_json(collector.deduplicate(collected))
@@ -113,6 +123,7 @@ def main():
         row["is_active"] = eligible(row, now)
     summary = {"mode": "apply" if args.apply else "dry-run", "source": "goszakup",
                "partial_scan": True, "profiles": len(active_profiles), "keywords": len(keywords),
+               "failed_keywords": len(failed_keywords),
                "collected": len(rows), "active": sum(r["is_active"] for r in rows)}
     preview = []
     candidate_matches = 0
