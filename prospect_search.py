@@ -56,6 +56,8 @@ def main():
     res = {"keywords": words, "minus": minus, "failed": failed, "collected": len(rows), "open": len(out),
            "generated_at": now.isoformat(), "tenders": out}
     Path(a.out).write_text(json.dumps(res, ensure_ascii=False, indent=1), encoding="utf-8")
+    for r in out:
+        print("PROSPECT_TENDER " + json.dumps(r, ensure_ascii=False))
     print(json.dumps({k: v for k, v in res.items() if k != "tenders"}, ensure_ascii=False))
 
 
