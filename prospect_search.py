@@ -53,6 +53,13 @@ def main():
         out.append({k: r.get(k) for k in ("source_lot_id", "title", "description", "amount", "expires_at",
                                           "status_name", "customer_name", "region", "public_url")})
     out.sort(key=lambda r: -(r.get("amount") or 0))
+    from collections import Counter
+    st = Counter(str(r.get("status_name")) for r in rows)
+    pubs = sorted(str(r.get("published_at") or "") for r in rows if r.get("published_at"))
+    exps = sorted(str(r.get("expires_at") or "") for r in rows if r.get("expires_at"))
+    print("DIAG statuses " + json.dumps(st.most_common(), ensure_ascii=False))
+    print("DIAG published " + (pubs[0] if pubs else "-") + " .. " + (pubs[-1] if pubs else "-"))
+    print("DIAG expires " + (exps[0] if exps else "-") + " .. " + (exps[-1] if exps else "-"))
     res = {"keywords": words, "minus": minus, "failed": failed, "collected": len(rows), "open": len(out),
            "generated_at": now.isoformat(), "tenders": out}
     Path(a.out).write_text(json.dumps(res, ensure_ascii=False, indent=1), encoding="utf-8")
