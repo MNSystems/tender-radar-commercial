@@ -1,0 +1,35 @@
+name: Prospect search (для писем, только чтение)
+on:
+  workflow_dispatch:
+    inputs:
+      keywords:
+        description: 'Ключевые слова через запятую'
+        required: true
+        type: string
+      minus:
+        description: 'Минус-слова через запятую'
+        required: false
+        type: string
+        default: ''
+permissions:
+  contents: read
+jobs:
+  search:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install requests==2.32.5 pypdf==6.1.1
+      - name: Search
+        env:
+          TRKZ_TEST_GOSZAKUP_TOKEN: ${{ secrets.TRKZ_TEST_GOSZAKUP_TOKEN }}
+          KW: ${{ inputs.keywords }}
+          MINUS: ${{ inputs.minus }}
+        run: python prospect_search.py --keywords "$KW" --minus "$MINUS"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: prospect-result
+          path: prospect_result.json
