@@ -28,7 +28,9 @@ jobs:
           TRKZ_TEST_GOSZAKUP_TOKEN: ${{ secrets.TRKZ_TEST_GOSZAKUP_TOKEN }}
           KW: ${{ inputs.keywords }}
           MINUS: ${{ inputs.minus }}
-        run: python prospect_search.py --keywords "$KW" --minus "$MINUS"
+        run: |
+          python probe_goszakup.py || true
+          python prospect_search.py --keywords "$KW" --minus "$MINUS"
       - uses: actions/upload-artifact@v4
         with:
           name: prospect-result
