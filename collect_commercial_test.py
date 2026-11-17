@@ -1,5 +1,6 @@
 """Bounded Goszakup pilot. Dry run by default; never sends notifications."""
 import argparse
+from dataclasses import asdict
 from datetime import datetime, timezone
 import json
 import os
@@ -11,6 +12,7 @@ import tempfile
 from urllib.parse import urlencode
 
 import collector_goszakup as collector
+import collector_zakup
 import auto_collect_and_sync_commercial as mapper
 
 TARGET = "https://aypqwhhplogolzczubwi.supabase.co"
@@ -51,8 +53,9 @@ def profiles(cfg):
 
 def eligible(tender, now):
     # A future date alone must not revive a cancelled/completed lot.
-    status = str(tender.get("status_name") or "").lower()
-    if not ("прием" in status or "приём" in status):
+    status = str(tender.get("status_name") or "").lower().strip()
+    # «Опубликован» — активный статус новой платформы zakup.gov.kz (status_id 6).
+    if not ("прием" in status or "приём" in status or status == "опубликован"):
         return False
     try:
         end = datetime.fromisoformat(str(tender["expires_at"]).replace("Z", "+00:00"))
@@ -94,9 +97,9 @@ def main():
     if not 1 <= args.limit <= 200:
         parser.error("limit must be between 1 and 200")
     cfg = config()
+    # Основной источник — открытый API zakup.gov.kz (без токена).
+    # Старый вход ows.goszakup.gov.kz — только запасной, если задан токен.
     token = os.environ.get("TRKZ_TEST_GOSZAKUP_TOKEN", "")
-    if not token:
-        raise ValueError("TRKZ_TEST_GOSZAKUP_TOKEN required")
     active_profiles = profiles(cfg)
     if args.profile_id is not None:
         active_profiles = [p for p in active_profiles if p["id"] == args.profile_id]
@@ -111,6 +114,7 @@ def main():
     # written only at the end. Stop searching in time and save what was found.
     # Keywords are shuffled so that every keyword gets its turn across runs.
     failed_keywords = []
+    sources = {"zakup": 0, "ows": 0}
     attempted = 0
     budget = float(os.environ.get("TRKZ_COLLECT_BUDGET_SECONDS", "1200"))
     started = time.monotonic()
@@ -122,7 +126,19 @@ def main():
             break
         attempted += 1
         try:
-            collected.extend(collector.collect_keyword(token, keyword, args.limit))
+            found = collector_zakup.collect_keyword(keyword)
+            collected.extend(found)
+            sources["zakup"] += 1
+            print(f"INFO zakup {keyword}: {len(found)} open lots", file=sys.stderr)
+            continue
+        except Exception as exc:
+            print(f"WARNING zakup failed for {keyword}: {exc!r}", file=sys.stderr)
+        if not token:
+            failed_keywords.append(keyword)
+            continue
+        try:
+            collected.extend(asdict(t) for t in collector.collect_keyword(token, keyword, args.limit))
+            sources["ows"] += 1
         except Exception as exc:
             failed_keywords.append(keyword)
             print(f"WARNING keyword skipped: {keyword}: {exc!r}", file=sys.stderr)
@@ -130,7 +146,11 @@ def main():
         raise RuntimeError(f"Goszakup unavailable for all {attempted} attempted keywords")
     with tempfile.TemporaryDirectory(prefix="trkz-test-") as directory:
         collector.OUTPUT_DIR = mapper.OUT = Path(directory)
-        collector.save_json(collector.deduplicate(collected))
+        unique = {}
+        for item in collected:
+            unique.setdefault(str(item.get("external_id") or ""), item)
+        (Path(directory) / "tenders.json").write_text(
+            json.dumps(list(unique.values()), ensure_ascii=False), encoding="utf-8")
         rows = mapper.make_goszakup()
     now = datetime.now(timezone.utc)
     for row in rows:
@@ -138,6 +158,7 @@ def main():
     summary = {"mode": "apply" if args.apply else "dry-run", "source": "goszakup",
                "partial_scan": True, "profiles": len(active_profiles), "keywords": len(keywords),
                "attempted_keywords": attempted, "failed_keywords": len(failed_keywords),
+               "keywords_via_zakup": sources["zakup"], "keywords_via_ows": sources["ows"],
                "collected": len(rows), "active": sum(r["is_active"] for r in rows)}
     preview = []
     candidate_matches = 0
