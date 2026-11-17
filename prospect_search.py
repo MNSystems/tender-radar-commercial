@@ -1,72 +1,39 @@
-"""Поиск открытых закупок Госзакупа по ключевым словам для письма потенциальному клиенту.
-Только чтение: ничего не пишет в Supabase, не трогает клиентов, профили и Telegram."""
-import argparse, json, os, sys, tempfile
+"""Поиск закупок для писем (только чтение, ничего не пишет в базу).
+Источник: открытый API zakup.gov.kz. Печатает строки PROSPECT_LOT {json}:
+и открытые сейчас лоты, и недавние (любой статус) — чтобы видеть покупателей."""
+import argparse, json, time
 from datetime import datetime, timezone
-from pathlib import Path
-
-import collector_goszakup as collector
-import auto_collect_and_sync_commercial as mapper
-
-
-def eligible(row, now):
-    status = str(row.get("status_name") or "").lower()
-    if not ("прием" in status or "приём" in status):
-        return False
-    try:
-        end = datetime.fromisoformat(str(row["expires_at"]).replace("Z", "+00:00"))
-        return end.tzinfo is not None and end > now
-    except (ValueError, TypeError, KeyError):
-        return False
-
+import collector_zakup as z
 
 def main():
-    p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("--keywords", required=True, help="Ключевые слова через запятую")
-    p.add_argument("--minus", default="", help="Минус-слова через запятую")
-    p.add_argument("--limit", type=int, default=100)
-    p.add_argument("--out", default="prospect_result.json")
-    a = p.parse_args()
-    token = os.environ.get("TRKZ_TEST_GOSZAKUP_TOKEN", "")
-    if not token:
-        raise ValueError("TRKZ_TEST_GOSZAKUP_TOKEN required")
-    words = [w.strip() for w in a.keywords.split(",") if w.strip()]
-    minus = [w.strip().lower() for w in a.minus.split(",") if w.strip()]
-    collected, failed = [], []
-    for w in words:
-        try:
-            collected.extend(collector.collect_keyword(token, w, a.limit))
-        except Exception as exc:
-            failed.append(w)
-            print(f"WARNING {w}: {exc!r}", file=sys.stderr)
-    with tempfile.TemporaryDirectory(prefix="prospect-") as d:
-        collector.OUTPUT_DIR = mapper.OUT = Path(d)
-        collector.save_json(collector.deduplicate(collected))
-        rows = mapper.make_goszakup()
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--keywords", required=True)
+    ap.add_argument("--minus", default="")
+    ap.add_argument("--recent", type=int, default=400, help="сколько последних лотов любого статуса брать на слово")
+    a = ap.parse_args()
+    kws = [k.strip() for k in a.keywords.split(",") if k.strip()]
+    minus = [m.strip().lower() for m in a.minus.split(",") if m.strip()]
     now = datetime.now(timezone.utc)
-    out = []
-    for r in rows:
-        if not eligible(r, now):
-            continue
-        text = " ".join(str(r.get(k) or "") for k in ("title", "description", "customer_name")).lower()
-        if minus and any(m in text for m in minus):
-            continue
-        out.append({k: r.get(k) for k in ("source_lot_id", "title", "description", "amount", "expires_at",
-                                          "status_name", "customer_name", "region", "public_url")})
-    out.sort(key=lambda r: -(r.get("amount") or 0))
-    from collections import Counter
-    st = Counter(str(r.get("status_name")) for r in rows)
-    pubs = sorted(str(r.get("published_at") or "") for r in rows if r.get("published_at"))
-    exps = sorted(str(r.get("expires_at") or "") for r in rows if r.get("expires_at"))
-    print("DIAG statuses " + json.dumps(st.most_common(), ensure_ascii=False))
-    print("DIAG published " + (pubs[0] if pubs else "-") + " .. " + (pubs[-1] if pubs else "-"))
-    print("DIAG expires " + (exps[0] if exps else "-") + " .. " + (exps[-1] if exps else "-"))
-    res = {"keywords": words, "minus": minus, "failed": failed, "collected": len(rows), "open": len(out),
-           "generated_at": now.isoformat(), "tenders": out}
-    Path(a.out).write_text(json.dumps(res, ensure_ascii=False, indent=1), encoding="utf-8")
-    for r in out:
-        print("PROSPECT_TENDER " + json.dumps(r, ensure_ascii=False))
-    print(json.dumps({k: v for k, v in res.items() if k != "tenders"}, ensure_ascii=False))
-
+    seen = {}
+    for kw in kws:
+        for off in range(0, a.recent, z.PAGE_SIZE):
+            page = z._get({"q": kw, "limit": z.PAGE_SIZE, "offset": off})
+            res = page.get("results") or []
+            for lot in res:
+                rec = z.to_record(lot, kw)
+                text = z.text_of(rec)
+                if any(m in text for m in minus):
+                    continue
+                rec["open_now"] = (lot.get("status") or {}).get("id") in z.ACTIVE_STATUS_IDS and z._future(lot.get("offer_end_date"), now)
+                seen.setdefault(rec["external_id"], rec)
+            time.sleep(z.PAUSE_SECONDS)
+            if len(res) < z.PAGE_SIZE:
+                break
+    keep = ("external_id","title","description","customer_name","customer_bin","region","amount_kzt","quantity",
+            "publish_date","end_date","status","trade_method","public_url","keyword","open_now")
+    for r in seen.values():
+        print("PROSPECT_LOT " + json.dumps({k: r.get(k) for k in keep}, ensure_ascii=False))
+    print("SUMMARY " + json.dumps({"lots": len(seen), "open_now": sum(r["open_now"] for r in seen.values())}))
 
 if __name__ == "__main__":
     main()
