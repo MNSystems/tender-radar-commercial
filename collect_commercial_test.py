@@ -65,9 +65,11 @@ def eligible(tender, now):
 
 
 def match(profile, tender):
-    text = mapper.tender_text(tender)
-    words = [w for w in mapper.normalize_list(profile.get("include_keywords")) if w.lower() in text]
-    if not words or any(w.lower() in text for w in mapper.normalize_list(profile.get("exclude_keywords"))):
+    text = mapper.tender_text(tender).replace("ё", "е")
+    words = [w for w in mapper.normalize_list(profile.get("include_keywords"))
+             if collector_zakup.stem(w) in text]
+    if not words or any(w.lower().replace("ё", "е") in text
+                        for w in mapper.normalize_list(profile.get("exclude_keywords"))):
         return None
     regions = mapper.normalize_list(profile.get("regions"))
     if regions and str(tender.get("region") or "").casefold() not in {r.casefold() for r in regions}:
@@ -142,6 +144,17 @@ def main():
         except Exception as exc:
             failed_keywords.append(keyword)
             print(f"WARNING keyword skipped: {keyword}: {exc!r}", file=sys.stderr)
+    # Второй проход: все свежие лоты за последние часы, совпадение ищем сами
+    # (название лота, объявления, описание ЕНС ТРУ) — ловит «освещение» в
+    # «Материалы для уличного освещения», чего поиск платформы не умеет.
+    if keywords:
+        try:
+            recent = collector_zakup.crawl_recent(
+                keywords, hours=float(os.environ.get("TRKZ_ZAKUP_RECENT_HOURS", "8")))
+            collected.extend(recent)
+            print(f"INFO zakup recent crawl: {len(recent)} open lots matched", file=sys.stderr)
+        except Exception as exc:
+            print(f"WARNING zakup recent crawl failed: {exc!r}", file=sys.stderr)
     if attempted and len(failed_keywords) == attempted:
         raise RuntimeError(f"Goszakup unavailable for all {attempted} attempted keywords")
     with tempfile.TemporaryDirectory(prefix="trkz-test-") as directory:

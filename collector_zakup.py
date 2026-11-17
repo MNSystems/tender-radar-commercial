@@ -150,3 +150,49 @@ def deduplicate(items: Iterable[Dict[str, Any]]) -> List[Dict[str, Any]]:
     for item in items:
         best.setdefault(item["external_id"], item)
     return list(best.values())
+
+
+def stem(word: str) -> str:
+    """Простое отсечение окончания: «освещение» → «освещени» (найдёт «освещения»)."""
+    w = str(word or "").strip().lower().replace("ё", "е")
+    return w[:-2] if len(w) >= 6 else w
+
+
+def text_of(rec: Dict[str, Any]) -> str:
+    return " ".join([rec.get("title", ""), rec.get("description", ""),
+                     rec.get("category", "")]).lower().replace("ё", "е")
+
+
+def crawl_recent(keywords: List[str], hours: float = 8, max_pages: int = 150,
+                 budget_seconds: float = 600) -> List[Dict[str, Any]]:
+    """Пролистать все свежие лоты (новые первыми) и оставить открытые,
+    где встречается любое слово профиля — в названии лота, объявления или описании."""
+    now = datetime.now(timezone.utc)
+    stems = [(k, stem(k)) for k in keywords if stem(k)]
+    border = now.timestamp() - hours * 3600
+    started = time.monotonic()
+    found: Dict[str, Dict[str, Any]] = {}
+    for page_no in range(max_pages):
+        if time.monotonic() - started > budget_seconds:
+            break
+        page = _get({"limit": PAGE_SIZE, "offset": page_no * PAGE_SIZE})
+        results = page.get("results") or []
+        oldest = None
+        for lot in results:
+            try:
+                oldest = datetime.fromisoformat(str(lot.get("announcement_publish_date"))).timestamp()
+            except (TypeError, ValueError):
+                pass
+            st = (lot.get("status") or {}).get("id")
+            if st not in ACTIVE_STATUS_IDS or not _future(lot.get("offer_end_date"), now):
+                continue
+            rec = to_record(lot, "")
+            text = text_of(rec)
+            hit = [k for k, s in stems if s in text]
+            if hit:
+                rec["keyword"] = hit[0]
+                found.setdefault(rec["external_id"], rec)
+        time.sleep(PAUSE_SECONDS)
+        if len(results) < PAGE_SIZE or (oldest is not None and oldest < border):
+            break
+    return list(found.values())
