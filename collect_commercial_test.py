@@ -147,15 +147,17 @@ def main():
     # Второй проход: все свежие лоты за последние часы, совпадение ищем сами
     # (название лота, объявления, описание ЕНС ТРУ) — ловит «освещение» в
     # «Материалы для уличного освещения», чего поиск платформы не умеет.
+    crawl_ok = False
     if keywords:
         try:
             recent = collector_zakup.crawl_recent(
                 keywords, hours=float(os.environ.get("TRKZ_ZAKUP_RECENT_HOURS", "8")))
             collected.extend(recent)
+            crawl_ok = True
             print(f"INFO zakup recent crawl: {len(recent)} open lots matched", file=sys.stderr)
         except Exception as exc:
             print(f"WARNING zakup recent crawl failed: {exc!r}", file=sys.stderr)
-    if attempted and len(failed_keywords) == attempted:
+    if attempted and len(failed_keywords) == attempted and not crawl_ok:
         raise RuntimeError(f"Goszakup unavailable for all {attempted} attempted keywords")
     with tempfile.TemporaryDirectory(prefix="trkz-test-") as directory:
         collector.OUTPUT_DIR = mapper.OUT = Path(directory)
