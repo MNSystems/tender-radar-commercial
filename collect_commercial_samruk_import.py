@@ -90,6 +90,10 @@ def main():
             rows = collector.enrich_rows(driver, collector.collect(driver))
         finally:
             driver.quit()
+    if keywords and len(collector.FAILED_KEYWORDS) == len(keywords):
+        # Сайт Самрука не ответил ни на одно слово: ничего не пишем и не падаем,
+        # будильник повторит сбор через 30 минут.
+        print("WARNING Samruk did not respond for any keyword; nothing written this run", file=sys.stderr)
     now = datetime.now(timezone.utc)
     verified_rows = []
     candidates = 0
@@ -174,6 +178,7 @@ def main():
     print(json.dumps({
         "mode": "apply" if args.apply else "dry-run", "source": "samruk", "partial_scan": True,
         "profiles": len(profiles), "keywords": len(keywords), "collected": len(rows),
+        "failed_keywords": len(collector.FAILED_KEYWORDS),
         "candidate_matches": candidates,
         "details_ok": sum(bool((r.get("raw") or {}).get("detail_checked")) for r in rows),
         "verified_tenders": len(verified_rows), "matches_upserted": matches_upserted,

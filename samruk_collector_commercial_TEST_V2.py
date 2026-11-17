@@ -237,7 +237,35 @@ def make_driver():
     options.add_argument("--lang=ru-RU")
     options.add_argument("--disable-gpu")
     options.add_argument("--disable-notifications")
-    return webdriver.Chrome(options=options)
+    driver = webdriver.Chrome(options=options)
+    # Сайт Самрука иногда «висит»: без этого предела driver.get ждёт до обрыва
+    # связи с браузером (120 с) и роняет весь запуск.
+    driver.set_page_load_timeout(PAGE_LOAD_TIMEOUT)
+    return driver
+
+
+# Сколько секунд ждать загрузку страницы и сколько раз пробовать.
+PAGE_LOAD_TIMEOUT = int(os.environ.get("TRKZ_SAMRUK_PAGE_TIMEOUT", "45"))
+PAGE_LOAD_ATTEMPTS = 2
+# Слова, по которым сайт так и не открылся в этом запуске.
+FAILED_KEYWORDS = []
+
+
+def open_page(driver, url):
+    """Открыть страницу с пределом времени и одной повторной попыткой.
+    Возвращает True, если страница открылась."""
+    for attempt in range(1, PAGE_LOAD_ATTEMPTS + 1):
+        try:
+            driver.get(url)
+            return True
+        except Exception as exc:
+            print(f"  WARNING page load {attempt}/{PAGE_LOAD_ATTEMPTS} failed: {type(exc).__name__}")
+            try:
+                driver.execute_script("window.stop();")
+            except Exception:
+                pass
+            time.sleep(3)
+    return False
 
 
 def wait_for_cards(driver, timeout=WAIT_SECONDS):
@@ -1313,7 +1341,11 @@ def collect(driver):
                 except Exception:
                     pass
 
-            driver.get(search_url)
+            if not open_page(driver, search_url):
+                # Сайт не ответил: пропускаем слово, остальные собираем дальше.
+                print("  WARNING keyword skipped, Samruk did not respond:", keyword)
+                FAILED_KEYWORDS.append(keyword)
+                break
             WebDriverWait(driver, WAIT_SECONDS).until(
                 EC.presence_of_element_located((By.TAG_NAME, "body"))
             )
