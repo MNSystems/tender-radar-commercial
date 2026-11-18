@@ -33,7 +33,16 @@ def main():
     if not keywords:
         print(json.dumps({"mode": "dry-run", "source": "samruk", "collected": 0}))
         return
+    # Основной источник Самрука — открытый API zakup.gov.kz (system_id=3): сайт
+    # zakup.sk.kz с ноября 2026 не пускает зарубежные серверы. Браузер — запасной путь.
     import samruk_collector_commercial_TEST_V2 as collector
+    import collector_zakup
+    zakup_rows = None
+    try:
+        zakup_rows = collector_zakup.collect_samruk(keywords)
+        print(f"INFO samruk via zakup.gov.kz: {len(zakup_rows)} open lots", file=sys.stderr)
+    except Exception as exc:
+        print(f"WARNING samruk via zakup.gov.kz failed, fallback to browser: {exc!r}", file=sys.stderr)
     collector.KEYWORDS = keywords
     collector.MAX_PAGES_PER_KEYWORD = 1
     collector.DETAIL_LIMIT = 0  # Enrich all active rows in the bounded first-page sample.
@@ -83,14 +92,17 @@ def main():
         result["raw"]["acceptance_deadline_checked"] = bool(end)
         return result
     collector.enrich_from_open_detail = verified_enrich
-    with tempfile.TemporaryDirectory(prefix="trkz-samruk-audit-") as directory:
-        collector.OUT = Path(directory)
-        driver = collector.make_driver()
-        try:
-            rows = collector.enrich_rows(driver, collector.collect(driver))
-        finally:
-            driver.quit()
-    if keywords and len(collector.FAILED_KEYWORDS) == len(keywords):
+    if zakup_rows is not None:
+        rows = zakup_rows
+    else:
+        with tempfile.TemporaryDirectory(prefix="trkz-samruk-audit-") as directory:
+            collector.OUT = Path(directory)
+            driver = collector.make_driver()
+            try:
+                rows = collector.enrich_rows(driver, collector.collect(driver))
+            finally:
+                driver.quit()
+    if zakup_rows is None and keywords and len(collector.FAILED_KEYWORDS) == len(keywords):
         # Сайт Самрука не ответил ни на одно слово: ничего не пишем и не падаем,
         # будильник повторит сбор через 30 минут.
         print("WARNING Samruk did not respond for any keyword; nothing written this run", file=sys.stderr)
