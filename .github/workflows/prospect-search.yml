@@ -29,6 +29,7 @@ jobs:
           KW: ${{ inputs.keywords }}
           MINUS: ${{ inputs.minus }}
         run: |
+          python probe_samruk.py || true
           python prospect_search.py --keywords "$KW" --minus "$MINUS"
       - uses: actions/upload-artifact@v4
         with:
