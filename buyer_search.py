@@ -17,7 +17,7 @@ import collector_zakup as z
 BASE = "https://zakup.gov.kz/api/core/api/public"
 
 
-def get(path, params, attempts=4):
+def get(path, params, attempts=7):
     last = None
     for i in range(attempts):
         try:
@@ -27,7 +27,7 @@ def get(path, params, attempts=4):
             last = RuntimeError(f"HTTP {r.status_code} {r.text[:200]}")
         except Exception as e:  # сеть
             last = e
-        time.sleep(2 + i * 3)
+        time.sleep(5 + i * 10)
     raise last
 
 
