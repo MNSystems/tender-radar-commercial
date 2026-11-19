@@ -1,0 +1,30 @@
+name: Company buyers (покупатели для компании, только чтение)
+on:
+  workflow_dispatch:
+    inputs:
+      ids:
+        description: 'id:название;id:название'
+        required: true
+        type: string
+      months:
+        description: 'Глубина истории компании, мес'
+        required: false
+        type: string
+        default: '24'
+permissions:
+  contents: read
+jobs:
+  search:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install requests==2.32.5 pypdf==6.1.1
+      - name: Search
+        env:
+          IDS: ${{ inputs.ids }}
+          MONTHS: ${{ inputs.months }}
+        run: python company_buyers.py --ids "$IDS" --months "$MONTHS"
