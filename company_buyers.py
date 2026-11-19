@@ -71,6 +71,12 @@ def main():
         if not part.strip():
             continue
         oid, _, name = part.partition(":")
+        oid = oid.strip()
+        if len(oid) == 12:  # БИН -> id новой платформы
+            res = get("/organizations/", {"q": oid, "limit": 5}).get("results") or []
+            oid = str(res[0]["id"]) if res else ""
+            if not oid:
+                print("CB_COMPANY " + json.dumps({"expected": name, "error": "not found by BIN"}, ensure_ascii=False)); continue
         own = contracts({"supplier_organization_id": oid.strip(), "sign_date__gte": since}, 1500)
         sname = own[0].get("supplier_organization_name") if own else ""
         print("CB_COMPANY " + json.dumps({"id": oid, "expected": name, "found_name": sname, "contracts": len(own)}, ensure_ascii=False))
@@ -109,19 +115,6 @@ def main():
         for cn, x in sorted(newc.items(), key=lambda kv: (-kv[1]["sum"]))[:25]:
             print("CB_NEW_CUSTOMER " + json.dumps({"id": oid, "customer": cn, "n": x["n"], "sum": round(x["sum"]), "last": x["last"],
                                                    "bought_from": x["from"].most_common(1)[0][0]}, ensure_ascii=False))
-        # открытые лоты по главным кодам
-        for c, _ in codes.most_common(3):
-            try:
-                res = get("/lots/", {"enstru_key": c, "limit": 100}).get("results") or []
-            except Exception as e:
-                print("CB_OPEN_ERR " + json.dumps({"code": c, "err": str(e)[:200]}, ensure_ascii=False)); res = []
-            for lot in res:
-                st = (lot.get("status") or {}).get("id")
-                if st in z.ACTIVE_STATUS_IDS and z._future(lot.get("offer_end_date"), now) and lot.get("enstru_key") == c:
-                    rec = z.to_record(lot, c)
-                    print("CB_OPEN " + json.dumps({"id": oid, "code": c, "customer": rec["customer_name"], "title": rec["title"],
-                                                   "amount": rec["amount_kzt"], "end": rec["end_date"], "url": rec["public_url"]}, ensure_ascii=False))
-            time.sleep(0.4)
 
 
 if __name__ == "__main__":
