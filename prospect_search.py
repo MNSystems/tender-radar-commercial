@@ -28,7 +28,18 @@ def probe(kw):
             except Exception as e:
                 print("PROBE_GET", path, "ERR", e)
     import requests
-    for path in ("/contracts/", "/winners/", "/protocols/", "/announcements/"):
+    for params in ({"limit": 2}, {"limit": 2, "search": kw}, {"limit": 2, "name": kw}, {"limit": 2, "lot_id": done[0].get("id") if done else 0}):
+        try:
+            r = requests.get(base + "/contracts/", params=params, timeout=30)
+            print("PROBE_CONTRACTS", json.dumps(params, ensure_ascii=False), r.status_code, r.text[:2500].replace("\n", " "))
+        except Exception as e:
+            print("PROBE_CONTRACTS", params, "ERR", e)
+    try:
+        r = requests.options(base + "/contracts/", timeout=30)
+        print("PROBE_OPTIONS", r.status_code, r.text[:2000])
+    except Exception as e:
+        print("PROBE_OPTIONS ERR", e)
+    for path in ():
         try:
             r = requests.get(base + path, params={"q": kw, "limit": 2}, timeout=30)
             print("PROBE_LIST", path, r.status_code, r.text[:1500].replace("\n", " "))
