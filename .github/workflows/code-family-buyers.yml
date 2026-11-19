@@ -1,0 +1,36 @@
+name: Code family buyers (заказчики работ по кодам, только чтение)
+on:
+  workflow_dispatch:
+    inputs:
+      prefixes:
+        description: 'Префиксы кодов ЕНС ТРУ через запятую (например 422123.200)'
+        required: true
+        type: string
+      phrases:
+        description: 'Фразы для поиска открытых лотов через запятую'
+        required: false
+        type: string
+        default: ''
+      months:
+        description: 'Глубина договоров, мес'
+        required: false
+        type: string
+        default: '24'
+permissions:
+  contents: read
+jobs:
+  search:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install requests==2.32.5 pypdf==6.1.1
+      - name: Search
+        env:
+          PRE: ${{ inputs.prefixes }}
+          PH: ${{ inputs.phrases }}
+          MONTHS: ${{ inputs.months }}
+        run: python code_family_buyers.py --prefixes "$PRE" --phrases "$PH" --months "$MONTHS"
