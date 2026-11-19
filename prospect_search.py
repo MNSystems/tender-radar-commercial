@@ -28,10 +28,12 @@ def probe(kw):
             except Exception as e:
                 print("PROBE_GET", path, "ERR", e)
     import requests
-    for params in ({"limit": 2}, {"limit": 2, "search": kw}, {"limit": 2, "name": kw}, {"limit": 2, "lot_id": done[0].get("id") if done else 0}):
+    for params in ({"limit": 3, "enstru_code": "310111.900.000000"}, {"limit": 3, "enstru_code__in": "310111.900.000000"}, {"limit": 3, "enstru_code": "310111.900"},
+                   {"limit": 2, "supplier_organization_id": 260520}, {"limit": 2, "customer_organization_id": 33273}, {"limit": 2, "sign_date__gte": "2026-11-01"},
+                   {"limit": 2, "supplier_bin": "011140003626"}, {"limit": 2, "status_id": 6, "system_id": 1}, {"limit": 2, "ordering": "-sign_date"}):
         try:
             r = requests.get(base + "/contracts/", params=params, timeout=30)
-            print("PROBE_CONTRACTS", json.dumps(params, ensure_ascii=False), r.status_code, r.text[:2500].replace("\n", " "))
+            print("PROBE_CONTRACTS", json.dumps(params, ensure_ascii=False), r.status_code, r.text[:900].replace("\n", " "))
         except Exception as e:
             print("PROBE_CONTRACTS", params, "ERR", e)
     try:
