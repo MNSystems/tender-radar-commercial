@@ -21,7 +21,7 @@ def get(path, params, attempts=7):
     last = None
     for i in range(attempts):
         try:
-            r = requests.get(BASE + path, params=params, timeout=40)
+            r = requests.get(BASE + path, params=params, headers=z.HEADERS, timeout=(20, 60))
             if r.status_code == 200:
                 return r.json()
             last = RuntimeError(f"HTTP {r.status_code} {r.text[:200]}")
