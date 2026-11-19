@@ -36,7 +36,7 @@ def main():
     ap.add_argument("--keywords", required=True)
     ap.add_argument("--minus", default="")
     ap.add_argument("--months", type=int, default=12)
-    ap.add_argument("--max_codes", type=int, default=6)
+    ap.add_argument("--max_codes", type=int, default=10)
     ap.add_argument("--max_contracts", type=int, default=3000)
     a = ap.parse_args()
     kws = [k.strip() for k in a.keywords.split(",") if k.strip()]
