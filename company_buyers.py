@@ -43,11 +43,28 @@ def contracts(params, cap):
     return out
 
 
+def probe_bin(b, name):
+    tries = [("/contracts/", {"supplier_organization_bin": b}), ("/contracts/", {"supplier_bin_iin": b}), ("/contracts/", {"supplier_organization__bin": b}),
+             ("/contracts/", {"supplier_biin": b}), ("/organizations/", {"q": b}), ("/organizations/", {"bin": b}), ("/organizations/", {"q": name}),
+             ("/suppliers/", {"q": b}), ("/participants/", {"q": b}), ("/organizations/", {"limit": 2})]
+    for path, p in tries:
+        try:
+            r = requests.get(BASE + path, params=dict(p, limit=2), headers=z.HEADERS, timeout=(20, 60))
+            print("CB_PROBE " + json.dumps({"path": path, "p": p, "code": r.status_code, "body": r.text[:700]}, ensure_ascii=False))
+        except Exception as e:
+            print("CB_PROBE ERR", path, p, e)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--ids", required=True, help="id:название;id:название")
     ap.add_argument("--months", type=int, default=24)
+    ap.add_argument("--probe_bin", default="")
     a = ap.parse_args()
+    if a.probe_bin:
+        b, _, nm = a.probe_bin.partition(":")
+        probe_bin(b, nm)
+        return
     since = (datetime.now(timezone.utc) - timedelta(days=30 * a.months)).date().isoformat()
     now = datetime.now(timezone.utc)
     for part in a.ids.split(";"):

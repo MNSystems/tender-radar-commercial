@@ -11,6 +11,11 @@ on:
         required: false
         type: string
         default: '24'
+      probe_bin:
+        description: 'Разведка: БИН:название'
+        required: false
+        type: string
+        default: ''
 permissions:
   contents: read
 jobs:
@@ -27,4 +32,5 @@ jobs:
         env:
           IDS: ${{ inputs.ids }}
           MONTHS: ${{ inputs.months }}
-        run: python company_buyers.py --ids "$IDS" --months "$MONTHS"
+          PROBE_BIN: ${{ inputs.probe_bin }}
+        run: python company_buyers.py --ids "$IDS" --months "$MONTHS" --probe_bin "$PROBE_BIN"
