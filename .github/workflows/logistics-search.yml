@@ -1,0 +1,55 @@
+name: Logistics search (перевозчики и заказчики перевозок, только чтение)
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'codes | orgprobe | run'
+        required: true
+        type: string
+        default: 'codes'
+      phrases:
+        description: 'Фразы для поиска кодов (mode=codes)'
+        required: false
+        type: string
+        default: ''
+      prefixes:
+        description: 'Префиксы кодов ЕНС ТРУ (mode=run)'
+        required: false
+        type: string
+        default: ''
+      codes:
+        description: 'Точные коды ЕНС ТРУ (mode=run)'
+        required: false
+        type: string
+        default: ''
+      ids:
+        description: 'id организаций (mode=orgprobe)'
+        required: false
+        type: string
+        default: ''
+      months:
+        description: 'Глубина договоров, мес'
+        required: false
+        type: string
+        default: '24'
+permissions:
+  contents: read
+jobs:
+  search:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install requests==2.32.5 pypdf==6.1.1
+      - name: Search
+        env:
+          MODE: ${{ inputs.mode }}
+          PH: ${{ inputs.phrases }}
+          PRE: ${{ inputs.prefixes }}
+          CODES: ${{ inputs.codes }}
+          IDS: ${{ inputs.ids }}
+          MONTHS: ${{ inputs.months }}
+        run: python logistics_search.py --mode "$MODE" --phrases "$PH" --prefixes "$PRE" --codes "$CODES" --ids "$IDS" --months "$MONTHS"
