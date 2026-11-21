@@ -174,29 +174,27 @@ def main():
     if os.environ.get("DDG") == "probe":
         probe(items); return
     print("SO_START", len(items))
-    for n, it in enumerate(items):
+    from concurrent.futures import ThreadPoolExecutor
+
+    def one(it):
         t0 = time.time()
         i, name, city = it[0], it[1], (it[2] if len(it) > 2 else "")
         row = {"i": i, "src": []}
-        em = org_email(name)
+        try:
+            em = org_email(name)
+        except Exception:
+            em = ""
         dom = em.split("@")[-1].lower().strip() if "@" in em else ""
         if dom and dom not in FREE and "." in dom:
             url, so = site_socials(dom)
             row["site"] = url or f"https://{dom}"
             row["src"].append("сайт" if url else "домен почты")
             row.update(so)
-        if use_ddg and not any(k in row for k in ("ig", "fb")):
-            so = ddg(name, city) or bing(name, city)
-            if so:
-                row["src"].append("поиск")
-                for k, v in so.items():
-                    row.setdefault(k, v)
-            time.sleep(1.5)
         row["t"] = round(time.time() - t0, 1); row["em"] = bool(em)
-        print("SO_ROW " + json.dumps(row, ensure_ascii=False))
-        time.sleep(0.3)
-        if n % 50 == 0:
-            print("SO_PROGRESS", n)
+        print("SO_ROW " + json.dumps(row, ensure_ascii=False), flush=True)
+
+    with ThreadPoolExecutor(max_workers=8) as ex:
+        list(ex.map(one, items))
     print("SO_DONE")
 
 
