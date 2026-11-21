@@ -55,12 +55,16 @@ def gz(path, params):
 def org_email(name):
     q = re.sub(r'ТОО|ИП|АО|["«»]', " ", name).strip()
     q = re.sub(r"\s+", " ", q)[:60]
-    d = gz("/organizations/", {"q": q, "limit": 10}) or {}
-    best = None
-    for r in d.get("results") or []:
-        if norm(r.get("name_ru") or r.get("name")) == norm(name):
-            best = r; break
-    return (best or {}).get("email") or ""
+    d = gz("/organizations/", {"q": q, "limit": 5}) or {}
+    rs = d.get("results") or []
+    for r in rs[:4]:
+        oid = r.get("id")
+        if not oid:
+            continue
+        det = gz(f"/organizations/{oid}/", None) or {}
+        if norm(det.get("name_ru") or det.get("name")) == norm(name) or (len(rs) == 1 and norm(name)[:5] in norm(det.get("name_ru") or "")):
+            return det.get("email") or ""
+    return ""
 
 
 def socials(html):
@@ -83,6 +87,32 @@ def site_socials(domain):
         except requests.RequestException:
             continue
     return "", {}
+
+
+BING_OK = [True]
+def bing(name, city):
+    if not BING_OK[0]:
+        return {}
+    q = f'{name} {city} instagram'.strip()
+    try:
+        r = requests.get("https://www.bing.com/search", params={"q": q, "setlang": "ru", "cc": "KZ"}, headers=UA, timeout=(8, 20))
+    except requests.RequestException:
+        return {}
+    if r.status_code != 200 or "b_algo" not in r.text:
+        BING_OK[0] = False
+        print("SO_BING_BLOCKED", r.status_code, len(r.text))
+        return {}
+    blocks = re.findall(r'<li class="b_algo".*?</li>', r.text, re.S)[:8]
+    key = norm(name).lower()
+    res = {}
+    for b in blocks:
+        so = socials(b)
+        txt = norm(re.sub("<[^>]+>", " ", b)).lower()
+        if key and key[:5] not in txt:
+            continue
+        for k, v in so.items():
+            res.setdefault(k, v)
+    return res
 
 
 DDG_OK = [True]
@@ -143,7 +173,7 @@ def main():
             row["src"].append("сайт" if url else "домен почты")
             row.update(so)
         if use_ddg and not any(k in row for k in ("ig", "fb")):
-            so = ddg(name, city)
+            so = ddg(name, city) or bing(name, city)
             if so:
                 row["src"].append("поиск")
                 for k, v in so.items():
