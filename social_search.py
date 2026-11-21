@@ -112,9 +112,24 @@ def ddg(name, city):
     return res
 
 
+def probe(items):
+    for it in items[:4]:
+        nm = it[1]; q = re.sub(r'ТОО|ИП|АО|["«»]', " ", nm).strip()
+        for params in ({"q": q}, {"q": nm}, {"search": q}, {"name_ru": nm}, {"name": q}, {"name_ru__icontains": q}):
+            p = dict(params, limit=3)
+            try:
+                r = requests.get(BASE + "/organizations/", params=p, headers=z.HEADERS, timeout=(10, 25))
+                d = r.json() if r.status_code == 200 else {}
+                print("SO_PROBE", json.dumps({"p": params, "st": r.status_code, "count": d.get("count"), "names": [x.get("name_ru") for x in (d.get("results") or [])[:3]]}, ensure_ascii=False))
+            except Exception as e:
+                print("SO_PROBE_ERR", params, e)
+
+
 def main():
     items = json.loads(gzip.decompress(base64.b64decode(os.environ["NAMES"])))
     use_ddg = os.environ.get("DDG", "1") == "1"
+    if os.environ.get("DDG") == "probe":
+        probe(items); return
     print("SO_START", len(items))
     for n, it in enumerate(items):
         t0 = time.time()
