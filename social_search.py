@@ -143,6 +143,19 @@ def ddg(name, city):
 
 
 def probe(items):
+    for it in items[:3]:
+        q = f"{it[1]} {it[2]} instagram"
+        for nm, url, params in (("bing_rss", "https://www.bing.com/search", {"q": q, "format": "rss"}),
+                                ("ddg_lite", "https://lite.duckduckgo.com/lite/", {"q": q}),
+                                ("mojeek", "https://www.mojeek.com/search", {"q": q}),
+                                ("yandex", "https://yandex.kz/search/", {"text": q}),
+                                ("startpage", "https://www.startpage.com/do/search", {"q": q})):
+            try:
+                r = requests.get(url, params=params, headers=UA, timeout=(8, 20))
+                print("SO_SE", nm, r.status_code, len(r.text), json.dumps(socials(r.text), ensure_ascii=False)[:300], r.text.count("instagram.com"))
+            except Exception as e:
+                print("SO_SE_ERR", nm, e)
+    return
     for it in items[:4]:
         nm = it[1]; q = re.sub(r'ТОО|ИП|АО|["«»]', " ", nm).strip()
         for params in ({"q": q}, {"q": nm}, {"search": q}, {"name_ru": nm}, {"name": q}, {"name_ru__icontains": q}):
