@@ -27,4 +27,4 @@ jobs:
         env:
           NAMES: ${{ inputs.names }}
           DDG: ${{ inputs.ddg }}
-        run: python social_search.py
+        run: python -u social_search.py

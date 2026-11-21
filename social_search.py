@@ -38,16 +38,17 @@ def norm(s):
 
 
 def gz(path, params):
-    for i in range(4):
+    for i in range(2):
         try:
-            r = requests.get(BASE + path, params=params, headers=z.HEADERS, timeout=(15, 40))
+            r = requests.get(BASE + path, params=params, headers=z.HEADERS, timeout=(10, 25))
             if r.status_code == 200:
                 return r.json()
             if r.status_code in (400, 404):
                 return None
         except requests.RequestException:
             pass
-        time.sleep(3 + i * 4)
+        print('SO_GZ', getattr(r, 'status_code', '?') if 'r' in dir() else 'exc')
+        time.sleep(2)
     return None
 
 
@@ -116,6 +117,7 @@ def main():
     use_ddg = os.environ.get("DDG", "1") == "1"
     print("SO_START", len(items))
     for n, it in enumerate(items):
+        t0 = time.time()
         i, name, city = it[0], it[1], (it[2] if len(it) > 2 else "")
         row = {"i": i, "src": []}
         em = org_email(name)
@@ -132,6 +134,7 @@ def main():
                 for k, v in so.items():
                     row.setdefault(k, v)
             time.sleep(1.5)
+        row["t"] = round(time.time() - t0, 1); row["em"] = bool(em)
         print("SO_ROW " + json.dumps(row, ensure_ascii=False))
         time.sleep(0.3)
         if n % 50 == 0:
