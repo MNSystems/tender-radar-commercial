@@ -265,8 +265,9 @@ def main():
                  "start": field(t, "Дата начала приема заявок"), "end": field(t, "Дата окончания приема заявок"),
                  "org": field(t, "Организатор"), "method": field(t, "Способ закупки"), "type": field(t, "Тип закупки"), "sid": sid, "lots": lots}
             print("SO_MW_BUY " + json.dumps(d, ensure_ascii=False), flush=True)
-            if sid and sid not in subj:
-                subj[sid] = 1
+            if sid: subj[sid] = 1
+        def subject(sid):
+            if True:
                 u = g(f"{MW}/ru/publics/subject/{sid}")
                 c = re.search(r"Контакты(.*?)</table>", u, re.S)
                 rows = []
@@ -291,8 +292,13 @@ def main():
                 if dom:
                     url, so = site_socials(dom); sd["site"] = url or ("https://" + dom); sd.update(so)
                 print("SO_MW_SUBJ " + json.dumps(sd, ensure_ascii=False), flush=True)
-        with ThreadPoolExecutor(max_workers=6) as ex:
+        t0 = time.time()
+        with ThreadPoolExecutor(max_workers=8) as ex:
             list(ex.map(buy, ids))
+        print("SO_MW_T buys", round(time.time() - t0), len(subj), flush=True)
+        with ThreadPoolExecutor(max_workers=8) as ex:
+            list(ex.map(subject, list(subj)))
+        print("SO_MW_T subj", round(time.time() - t0), flush=True)
         print("SO_DONE")
         return
     if os.environ.get("DDG") == "fetch":
