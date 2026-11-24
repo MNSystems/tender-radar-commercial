@@ -191,6 +191,17 @@ def main():
         with ThreadPoolExecutor(max_workers=6) as ex:
             list(ex.map(one, items))
         return
+    if os.environ.get("DDG") == "fetch":
+        for u in items:
+            try:
+                r = requests.get(u, headers=UA, timeout=(10, 30), allow_redirects=True)
+                t = re.sub(r"<script.*?</script>|<style.*?</style>", " ", r.text, flags=re.S)
+                links = sorted(set(re.findall(r'href="([^"]{5,120})"', r.text)))[:80]
+                t = re.sub(r"<[^>]+>", " ", t); t = re.sub(r"\s+", " ", t)
+                print("SO_FETCH", u, r.status_code, r.url[:100]); print("SO_TXT", t[:2500]); print("SO_LINKS", " ".join(links))
+            except Exception as e:
+                print("SO_FETCH", u, "ERR", str(e)[:100])
+        return
     if os.environ.get("DDG") == "sites":
         for u in items:
             try:
