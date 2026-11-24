@@ -191,6 +191,41 @@ def main():
         with ThreadPoolExecutor(max_workers=6) as ex:
             list(ex.map(one, items))
         return
+    if os.environ.get("DDG") == "flagma":
+        from cryptography.hazmat.primitives import serialization, hashes
+        from cryptography.hazmat.primitives.asymmetric import padding
+        from cryptography.fernet import Fernet
+        import html as H
+        pub = serialization.load_pem_public_key(base64.b64decode(os.environ["PUBKEY"]))
+        k = Fernet.generate_key(); f = Fernet(k)
+        print("SO_KEY " + base64.b64encode(pub.encrypt(k, padding.OAEP(mgf=padding.MGF1(hashes.SHA256()), algorithm=hashes.SHA256(), label=None))).decode())
+        from concurrent.futures import ThreadPoolExecutor
+        def clean(x): return re.sub(r"\s+", " ", H.unescape(re.sub(r"<[^>]+>", " ", x))).strip()
+        def one(fid):
+            s2 = ""
+            for _ in range(3):
+                try:
+                    r = requests.get(f"https://flagma.kz/{fid}/", headers=UA, timeout=(10, 30))
+                    if r.status_code == 200 and len(r.text) > 2000: s2 = r.text; break
+                except Exception: pass
+                time.sleep(2)
+            t = H.unescape(re.sub(r"<[^>]+>", "\n", re.sub(r"<script.*?</script>|<style.*?</style>", "", s2, flags=re.S)))
+            L = [l.strip() for l in t.split("\n") if l.strip()]
+            def after(key, n=1):
+                for i, l in enumerate(L):
+                    if l == key: return L[i + n] if i + n < len(L) else ""
+                return ""
+            m = re.search(r"<h1[^>]*>(.*?)</h1>", s2, re.S)
+            d = dict(id=fid, name=clean(m.group(1)) if m else "", rep=after("Представитель компании"), role=after("Представитель компании", 2),
+                     phones=list(dict.fromkeys(re.findall(r"href=['\"]tel:([^'\"]+)['\"]", s2))), city=after("фактический") or after("Адрес"),
+                     activity=after("Деятельность компании")[:300], registered=after("Регистрация:"))
+            md = re.search(r'<meta name="description" content="([^"]*)"', s2); d["about"] = H.unescape(md.group(1))[:300] if md else ""
+            print("SO_ENC " + f.encrypt(json.dumps(d, ensure_ascii=False).encode()).decode(), flush=True)
+            time.sleep(0.2)
+        with ThreadPoolExecutor(max_workers=8) as ex:
+            list(ex.map(one, items))
+        print("SO_DONE")
+        return
     if os.environ.get("DDG") == "fetch":
         for u in items:
             try:
