@@ -233,21 +233,24 @@ def main():
         def g(u):
             for _ in range(3):
                 try:
-                    r = requests.get(u, headers=UA, timeout=(10, 40))
-                    if r.status_code == 200: return r.text
-                except Exception: pass
-                time.sleep(2)
+                    r = requests.get(u, headers=UA, timeout=(10, 25))
+                    if r.status_code == 200: time.sleep(0.8); return r.text
+                    print("SO_MW_ERR", r.status_code, u[-40:], flush=True)
+                except Exception as e: print("SO_MW_ERR", str(e)[:60], u[-40:], flush=True)
+                time.sleep(6)
             return ""
         def txt(x): return re.sub(r"\s+", " ", H.unescape(re.sub(r"<[^>]+>", " ", x))).strip()
         def field(t, key):
             m = re.search(re.escape(key) + r"\s*</t[hd]>\s*<td[^>]*>(.*?)</td>", t, re.S)
             return txt(m.group(1)) if m else ""
+        skip = set(str(x) for x in items)
         ids = []
         for p in range(1, 200):
             t = g(f"{MW}/ru/publics/buys?filter%5Bstatus%5D=active&per-page=50&page={p}")
             new = [i for i in dict.fromkeys(re.findall(r"/ru/publics/buy/(\d+)", t)) if i not in ids]
             if not new: break
             ids += new
+        ids = [i for i in ids if i not in skip]
         print("SO_MW_IDS", len(ids), flush=True)
         subj = {}
         def buy(i):
@@ -293,10 +296,10 @@ def main():
                     url, so = site_socials(dom); sd["site"] = url or ("https://" + dom); sd.update(so)
                 print("SO_MW_SUBJ " + json.dumps(sd, ensure_ascii=False), flush=True)
         t0 = time.time()
-        with ThreadPoolExecutor(max_workers=8) as ex:
+        with ThreadPoolExecutor(max_workers=2) as ex:
             list(ex.map(buy, ids))
         print("SO_MW_T buys", round(time.time() - t0), len(subj), flush=True)
-        with ThreadPoolExecutor(max_workers=8) as ex:
+        with ThreadPoolExecutor(max_workers=3) as ex:
             list(ex.map(subject, list(subj)))
         print("SO_MW_T subj", round(time.time() - t0), flush=True)
         print("SO_DONE")
