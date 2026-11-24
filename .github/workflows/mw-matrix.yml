@@ -1,0 +1,41 @@
+name: Mitwork matrix (только чтение публичных объявлений)
+on:
+  workflow_dispatch:
+    inputs:
+      names:
+        description: 'gzip+base64 JSON list of ids'
+        required: true
+        type: string
+      ddg:
+        description: 'mwbuys | mwsubj'
+        required: true
+        type: string
+      n:
+        description: 'number of chunks (max 20)'
+        required: false
+        type: string
+        default: '20'
+permissions:
+  contents: read
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      max-parallel: 20
+      matrix:
+        chunk: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install requests==2.32.5 pypdf==6.1.1
+      - name: Run
+        env:
+          NAMES: ${{ inputs.names }}
+          DDG: ${{ inputs.ddg }}
+          CHUNK: ${{ matrix.chunk }}
+          NCHUNK: ${{ inputs.n }}
+        run: python -u social_search.py

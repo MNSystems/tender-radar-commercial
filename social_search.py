@@ -226,7 +226,8 @@ def main():
             list(ex.map(one, items))
         print("SO_DONE")
         return
-    if os.environ.get("DDG") == "mitwork":
+    if os.environ.get("DDG", "").startswith("mw"):
+        MODE = os.environ["DDG"]; CH = int(os.environ.get("CHUNK", "0")); NCH = int(os.environ.get("NCHUNK", "1"))
         import html as H
         from concurrent.futures import ThreadPoolExecutor
         MW = "https://eep.mitwork.kz"
@@ -245,13 +246,15 @@ def main():
             return txt(m.group(1)) if m else ""
         skip = set(str(x) for x in items)
         ids = []
-        for p in range(1, 200):
+        for p in range(1, 200 if MODE in ("mitwork", "mwlist") else 1):
             t = g(f"{MW}/ru/publics/buys?filter%5Bstatus%5D=active&per-page=50&page={p}")
             new = [i for i in dict.fromkeys(re.findall(r"/ru/publics/buy/(\d+)", t)) if i not in ids]
             if not new: break
             ids += new
         ids = [i for i in ids if i not in skip]
         print("SO_MW_IDS", len(ids), flush=True)
+        if MODE == "mwlist":
+            print("SO_MW_IDLIST " + json.dumps(ids)); return
         subj = {}
         def buy(i):
             t = g(f"{MW}/ru/publics/buy/{i}")
@@ -295,6 +298,14 @@ def main():
                 if dom:
                     url, so = site_socials(dom); sd["site"] = url or ("https://" + dom); sd.update(so)
                 print("SO_MW_SUBJ " + json.dumps(sd, ensure_ascii=False), flush=True)
+        if MODE == "mwbuys":
+            for i in [str(x) for x in items][CH::NCH]:
+                buy(i); time.sleep(2.5)
+            print("SO_DONE"); return
+        if MODE == "mwsubj":
+            for sid in [str(x) for x in items][CH::NCH]:
+                subject(sid); time.sleep(2.5)
+            print("SO_DONE"); return
         t0 = time.time()
         with ThreadPoolExecutor(max_workers=2) as ex:
             list(ex.map(buy, ids))
