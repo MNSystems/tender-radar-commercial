@@ -233,7 +233,7 @@ def main():
                 t = re.sub(r"<script.*?</script>|<style.*?</style>", " ", r.text, flags=re.S)
                 links = sorted(set(re.findall(r'href="([^"]{5,120})"', r.text)))[:80]
                 t = re.sub(r"<[^>]+>", " ", t); t = re.sub(r"\s+", " ", t)
-                print("SO_FETCH", u, r.status_code, r.url[:100]); print("SO_TXT", t[:2500]); print("SO_LINKS", " ".join(links))
+                print("SO_FETCH", u, r.status_code, r.url[:100]); print("SO_TXT", t[:int(os.environ.get("TXTN","2500"))]); print("SO_LINKS", " ".join(links))
             except Exception as e:
                 print("SO_FETCH", u, "ERR", str(e)[:100])
         return
