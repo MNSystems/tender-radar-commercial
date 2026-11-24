@@ -226,6 +226,75 @@ def main():
             list(ex.map(one, items))
         print("SO_DONE")
         return
+    if os.environ.get("DDG") == "mitwork":
+        import html as H
+        from concurrent.futures import ThreadPoolExecutor
+        MW = "https://eep.mitwork.kz"
+        def g(u):
+            for _ in range(3):
+                try:
+                    r = requests.get(u, headers=UA, timeout=(10, 40))
+                    if r.status_code == 200: return r.text
+                except Exception: pass
+                time.sleep(2)
+            return ""
+        def txt(x): return re.sub(r"\s+", " ", H.unescape(re.sub(r"<[^>]+>", " ", x))).strip()
+        def field(t, key):
+            m = re.search(re.escape(key) + r"\s*</t[hd]>\s*<td[^>]*>(.*?)</td>", t, re.S)
+            return txt(m.group(1)) if m else ""
+        ids = []
+        for p in range(1, 200):
+            t = g(f"{MW}/ru/publics/buys?filter%5Bstatus%5D=active&per-page=50&page={p}")
+            new = [i for i in dict.fromkeys(re.findall(r"/ru/publics/buy/(\d+)", t)) if i not in ids]
+            if not new: break
+            ids += new
+        print("SO_MW_IDS", len(ids), flush=True)
+        subj = {}
+        def buy(i):
+            t = g(f"{MW}/ru/publics/buy/{i}")
+            if not t: return
+            sid = (re.search(r"/ru/publics/subject/(\d+)", t) or [None, ""])[1]
+            lots = []
+            m = re.search(r"Лоты в объявлении(.*?)</table>", t, re.S)
+            if m:
+                for tr in re.findall(r"<tr[^>]*>(.*?)</tr>", m.group(1), re.S):
+                    tds = [txt(x) for x in re.findall(r"<td[^>]*>(.*?)</td>", tr, re.S)]
+                    if len(tds) >= 6: lots.append(tds[:7])
+            title = txt((re.search(r"<h1[^>]*>(.*?)</h1>", t, re.S) or [None, ""])[1]) if re.search(r"<h1", t) else ""
+            d = {"id": i, "title": title or field(t, "Наименование на русском языке"), "name_ru": field(t, "Наименование на русском языке"),
+                 "start": field(t, "Дата начала приема заявок"), "end": field(t, "Дата окончания приема заявок"),
+                 "org": field(t, "Организатор"), "method": field(t, "Способ закупки"), "type": field(t, "Тип закупки"), "sid": sid, "lots": lots}
+            print("SO_MW_BUY " + json.dumps(d, ensure_ascii=False), flush=True)
+            if sid and sid not in subj:
+                subj[sid] = 1
+                u = g(f"{MW}/ru/publics/subject/{sid}")
+                c = re.search(r"Контакты(.*?)</table>", u, re.S)
+                rows = []
+                if c:
+                    for tr in re.findall(r"<tr[^>]*>(.*?)</tr>", c.group(1), re.S):
+                        tds = [txt(x) for x in re.findall(r"<td[^>]*>(.*?)</td>", tr, re.S)]
+                        if tds: rows.append(tds)
+                sd = {"sid": sid, "name": txt((re.search(r"<h1[^>]*>(.*?)</h1>", u, re.S) or [None, ""])[1]), "bin": field(u, "БИН"),
+                      "size": field(u, "Размерность предприятия"), "contacts": rows}
+                if sd["bin"]:
+                    dd = gz("/organizations/", {"q": sd["bin"], "limit": 2}) or {}
+                    for r in (dd.get("results") or [])[:1]:
+                        det = gz(f"/organizations/{r.get('id')}/", None) or {}
+                        sd["email"] = det.get("email") or ""; sd["website"] = det.get("website") or ""
+                        sd["gz_phone"] = det.get("phone") or ""
+                        sd["director"] = ", ".join(x.get("full_name") or "" for x in det.get("directors") or [])
+                dom = ""
+                if sd.get("website"): dom = re.sub(r"^https?://(www\.)?", "", sd["website"]).split("/")[0]
+                elif "@" in sd.get("email", ""):
+                    e = sd["email"].split("@")[-1].lower().strip()
+                    if e not in FREE: dom = e
+                if dom:
+                    url, so = site_socials(dom); sd["site"] = url or ("https://" + dom); sd.update(so)
+                print("SO_MW_SUBJ " + json.dumps(sd, ensure_ascii=False), flush=True)
+        with ThreadPoolExecutor(max_workers=6) as ex:
+            list(ex.map(buy, ids))
+        print("SO_DONE")
+        return
     if os.environ.get("DDG") == "fetch":
         for u in items:
             try:
