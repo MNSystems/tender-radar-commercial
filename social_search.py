@@ -171,6 +171,14 @@ def probe(items):
 def main():
     items = json.loads(gzip.decompress(base64.b64decode(os.environ["NAMES"])))
     use_ddg = os.environ.get("DDG", "1") == "1"
+    if os.environ.get("DDG") == "sites":
+        for u in items:
+            try:
+                r = requests.get(u, headers=UA, timeout=(10, 25), allow_redirects=True)
+                print("SO_SITE", u, r.status_code, len(r.text), r.url[:80])
+            except Exception as e:
+                print("SO_SITE", u, "ERR", str(e)[:80])
+        return
     if os.environ.get("DDG") == "probe":
         probe(items); return
     print("SO_START", len(items))
