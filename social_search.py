@@ -355,6 +355,17 @@ def main():
         print("SO_MW_T subj", round(time.time() - t0), flush=True)
         print("SO_DONE")
         return
+    if os.environ.get("DDG") == "raw":
+        for n, u in enumerate(items):
+            try:
+                r = requests.get(u, headers=UA, timeout=(10, 40), allow_redirects=True)
+                b = base64.b64encode(gzip.compress(r.text.encode())).decode()
+                for k in range(0, len(b), 30000):
+                    print(f"SO_RAW {n} {k//30000} " + b[k:k+30000])
+                print("SO_RAWEND", n, r.status_code, len(r.text))
+            except Exception as e:
+                print("SO_RAWEND", n, "ERR", str(e)[:100])
+        return
     if os.environ.get("DDG") == "fetch":
         for u in items:
             try:
