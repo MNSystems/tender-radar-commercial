@@ -10,6 +10,11 @@ on:
         description: 'mwbuys | mwsubj'
         required: true
         type: string
+      pubkey:
+        description: 'base64 PEM public key (webchk)'
+        required: false
+        type: string
+        default: ''
       n:
         description: 'number of chunks (max 20)'
         required: false
@@ -31,11 +36,12 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - run: python -m pip install requests==2.32.5 pypdf==6.1.1
+      - run: python -m pip install requests==2.32.5 pypdf==6.1.1 cryptography==44.0.0
       - name: Run
         env:
           NAMES: ${{ inputs.names }}
           DDG: ${{ inputs.ddg }}
           CHUNK: ${{ matrix.chunk }}
           NCHUNK: ${{ inputs.n }}
+          PUBKEY: ${{ inputs.pubkey }}
         run: python -u social_search.py

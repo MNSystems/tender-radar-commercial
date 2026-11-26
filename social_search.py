@@ -168,7 +168,47 @@ def probe(items):
                 print("SO_PROBE_ERR", params, e)
 
 
+def webchk():
+    """Проверка кандидатов-доменов: заголовок, телефоны на странице, соцсети. Вывод зашифрован."""
+    import socket, html as H
+    from concurrent.futures import ThreadPoolExecutor
+    from cryptography.hazmat.primitives import serialization, hashes
+    from cryptography.hazmat.primitives.asymmetric import padding
+    from cryptography.fernet import Fernet
+    doms = json.loads(gzip.decompress(open("web_dom.json.gz", "rb").read()))
+    CH = int(os.environ.get("CHUNK", "0")); NCH = int(os.environ.get("NCHUNK", "1"))
+    doms = doms[CH::NCH]
+    pub = serialization.load_pem_public_key(base64.b64decode(os.environ["PUBKEY"]))
+    k = Fernet.generate_key(); f = Fernet(k)
+    print("SO_KEY " + base64.b64encode(pub.encrypt(k, padding.OAEP(mgf=padding.MGF1(hashes.SHA256()), algorithm=hashes.SHA256(), label=None))).decode())
+    PH = re.compile(r"(?:\+?[78])?[\s\-\(\.]*\d{3}[\s\-\)\.]*\d{3}[\s\-\.]*\d{2}[\s\-\.]*\d{2}")
+    def one(d):
+        try:
+            socket.getaddrinfo(d, 443)
+        except Exception:
+            return
+        for url in (f"https://{d}", f"http://{d}"):
+            try:
+                r = requests.get(url, headers=UA, timeout=(6, 15), allow_redirects=True)
+                if r.status_code >= 400 or len(r.text) < 300:
+                    continue
+                t = r.text[:600000]
+                title = re.search(r"<title[^>]*>(.*?)</title>", t, re.S | re.I)
+                title = re.sub(r"\s+", " ", H.unescape(title.group(1))).strip()[:150] if title else ""
+                ph = sorted({re.sub(r"\D", "", p)[-10:] for p in PH.findall(t) if len(re.sub(r"\D", "", p)) >= 10})[:40]
+                row = {"d": d, "u": r.url[:120], "ti": title, "ph": ph, "alm": ("алматы" in t.lower() or "almaty" in t.lower()), "so": socials(t)}
+                print("SO_ENC " + f.encrypt(json.dumps(row, ensure_ascii=False).encode()).decode(), flush=True)
+                return
+            except Exception:
+                continue
+    with ThreadPoolExecutor(max_workers=24) as ex:
+        list(ex.map(one, doms))
+    print("SO_DONE", len(doms))
+
+
 def main():
+    if os.environ.get("DDG") == "webchk":
+        webchk(); return
     items = json.loads(gzip.decompress(base64.b64decode(os.environ["NAMES"])))
     use_ddg = os.environ.get("DDG", "1") == "1"
     if os.environ.get("DDG", "").startswith("orgfull"):
